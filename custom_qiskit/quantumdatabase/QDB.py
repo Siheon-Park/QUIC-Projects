@@ -16,8 +16,8 @@ from qiskit.circuit import Instruction
 from qiskit.circuit.library.standard_gates.x import CXGate
 from qiskit.circuit.library.standard_gates.ry import RYGate
 from qiskit.circuit.library.standard_gates.u1 import U1Gate
-from qiskit.circuit.reset import Reset
 
+from qiskit import transpile
 _EPS = 1e-10  # global variable used to chop very small numbers to zero
 
 
@@ -31,7 +31,7 @@ class Initialize(Instruction):
     which is not unitary.
     """
 
-    def __init__(self, params):
+    def __init__(self, params, custum_name="Initialize"):
         """Create new initialize composite.
 
         params (list): vector of complex amplitudes to initialize to
@@ -49,7 +49,7 @@ class Initialize(Instruction):
 
         num_qubits = int(num_qubits)
 
-        super().__init__("QDB", num_qubits, 0, params)
+        super().__init__(custum_name, num_qubits, 0, params)
 
     def _define(self):
         """Calculate a subcircuit that implements this initialization
@@ -72,7 +72,7 @@ class Initialize(Instruction):
         initialize_circuit = QuantumCircuit(q, name='init_def')
         initialize_circuit.append(initialize_instr, q[:])
 
-        self.definition = initialize_circuit
+        self.definition = transpile(initialize_circuit, basis_gates=['cx', 'u3'])
 
     def gates_to_uncompute(self):
         """Call to create a circuit with gates that take the desired vector to zero.
@@ -246,12 +246,12 @@ class Initialize(Instruction):
         yield flat_qargs, []
 
 
-def QDB(self, classical_data, qubits):
+def QDB(self, classical_data, qubits, name="QDB"):
     """
         do same thing as QuantumCircuit.initializer, but without data length condition, normalized condition and reset
     """
     if not isinstance(qubits, list):
-        qubits = [qubits]
+        qubits = list(qubits)
     n = len(qubits)
     N = len(classical_data)
     if (2**n)<N:
@@ -259,6 +259,6 @@ def QDB(self, classical_data, qubits):
     classical_data = np.array(classical_data).reshape(N)
     cdata = np.zeros(int(2 ** n))+1j*np.zeros(int(2**n))
     cdata[:N] = classical_data
-    return self.append(Initialize(cdata / np.linalg.norm(cdata)), qubits)
+    return self.append(Initialize(cdata / np.linalg.norm(cdata), name), qubits)
 
 QuantumCircuit.qdb = QDB
