@@ -73,6 +73,7 @@ class Initialize(Instruction):
         initialize_circuit.append(initialize_instr, q[:])
 
         self.definition = transpile(initialize_circuit, basis_gates=['cx', 'u3'])
+        #self.definition = initialize_circuit
 
     def gates_to_uncompute(self):
         """Call to create a circuit with gates that take the desired vector to zero.

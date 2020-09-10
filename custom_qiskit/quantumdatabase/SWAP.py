@@ -1,0 +1,117 @@
+
+import math
+import numpy as np
+from typing import List, Optional, Any
+from qiskit.exceptions import QiskitError
+from qiskit.circuit import QuantumCircuit
+from qiskit.circuit import QuantumRegister
+from qiskit.circuit import ClassicalRegister
+from qiskit.circuit import Instruction, Gate
+from qiskit.circuit.library.standard_gates.x import XGate
+from qiskit.extensions.quantum_initializer.initializer import Initialize
+from qiskit import transpile
+
+from prepare_state import quantum_state
+from quantum_encoder import Encoder
+
+_EPS = 1e-10  # global variable used to chop very small numbers to zero
+
+# Classifiter circuit template
+
+
+class SWAP_gate_classify(Instruction):
+    def __init__(self, weight:List, dataset:List[List], label:List, testdata:List):
+        """
+            Create SWAP test classification composite.
+
+            params (list): list of vectors
+            params[0] (ListLike): weight vector
+            params[1] (ListLike): array of data
+                                x = array([...x1...], 
+                                            [...x2...], 
+                                            ...)
+            params[2] (ListLike): list of labels of data
+            params[3] (ListLike): list of test data
+        """
+        # weight = parmas[0] # len: number of data
+        # dataset = params[1] # len: number of data
+        # label = params[2] # len: number of data
+        # testdata = params[3] # len: dimention of data
+        self.original_params = [weight, dataset, label, testdata]
+        # modify params to valid quanutm state
+        weight, index_qubit_num = quantum_state(weight)
+        label, _nl = quantum_state(label)
+        testdata, data_qubit_num = quantum_state(testdata)
+        _temp = np.array([quantum_state(data) for data in dataset])
+        dataset = _temp[:,0]
+
+        # check dataset & test data
+        if not np.all(_temp[:,1] == data_qubit_num):
+            raise DataPreparationError("invalid data set or test data")
+        qubit_numbers = [1, index_qubit_num, data_qubit_num, 1, data_qubit_num]
+        num_qubits = int(sum(qubit_numbers))
+        params = [weight, dataset, label, testdata, qubit_numbers]
+        super().__init__("SWAP classifier", num_qubits, 2, params)
+        self.number_of_data = len(dataset)
+        self.weight= weight
+        self.dataset=dataset
+        self.label= label
+        self.testdata= testdata
+        self.index_qubit_num= index_qubit_num
+        self.data_qubit_num= data_qubit_num
+
+    def _define(self):
+        """
+            params (list): list of vectors
+            params[0] (ListLike): weight vector
+            params[1] (ListLike): array of data
+                                x = array([...x1...], 
+                                            [...x2...], 
+                                            ...)
+            params[2] (ListLike): list of labels of data
+            params[3] (ListLike): list of test data
+        """
+        number_of_data = self.number_of_data
+        weight= self.weight
+        dataset=self.dataset
+        label= self.label
+        testdata= self.testdata
+        index_qubit_num= self.index_qubit_num
+        data_qubit_num= self.data_qubit_num
+
+        qr_a = QuantumRegister(1, name='a')
+        qr_i = QuantumRegister(index_qubit_num, name='i')
+        qr_x = QuantumRegister(data_qubit_num, name='x')
+        qr_y = QuantumRegister(1, name='y')
+        qr_xt = QuantumRegister(data_qubit_num, name='x~')
+        cr = ClassicalRegister(2, name='c')
+
+        qc = QuantumCircuit(qr_a, qr_i, qr_x, qr_y, qr_xt, cr, name='SWAP classifier')
+        qc.append(Encoder(weight, name='Weight'), qr_i, [])
+        qc.append(Encoder(testdata, name='Test Data'), qr_xt, [])
+        for i in range(number_of_data):
+            encoder_gate = Encoder(dataset[i], name="Data {:d}".format(i)).to_gate()
+            encoder_control_gate = encoder_gate.control(
+                num_ctrl_qubits=index_qubit_num,
+                label=str(i).encode(),
+                ctrl_state=i)
+            qc.append(encoder_control_gate, [qr_i, qr_x], [])
+            if label[i]==1:
+                multicontrol_XGate = XGate().control(
+                    num_ctrl_qubits=index_qubit_num,
+                    # label=stri(i),
+                    ctrl_state=i)
+                qc.append(multicontrol_XGate, [qr_i, qr_y], [])
+
+        # SWAP test
+        qc.h(qr_a)
+        for i in range(data_qubit_num):
+            qc.cswap(qr_a, qr_x[i], qr_xt[i])
+        qc.h(qr_a)
+        qc.measure(qr_a, cr[0])
+        qc.measure(qr_y, cr[1])
+        self.definition = qc
+
+class DataPreparationError(QiskitError):
+    pass
+
