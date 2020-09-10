@@ -52,6 +52,7 @@ class Encoder(Initialize):
     def to_gate(self, parameter_map=None, label=None):
         gate = self.definition.to_gate(parameter_map=parameter_map, label=label)
         gate.name = self.name
+        gate.params = self.params
         return gate
 # class EncoderGate(Gate):
 #     """Coplex amplitude encoding gate"""

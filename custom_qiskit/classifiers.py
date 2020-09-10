@@ -19,7 +19,7 @@ _EPS = 1e-10  # global variable used to chop very small numbers to zero
 # Classifiter circuit template
 
 
-class swap_classifier(Instruction):
+class Swap_classifier(Instruction):
     def __init__(self, weight:List, dataset:List[List], label:List, testdata:List):
         """
             Create SWAP test classification composite.
@@ -122,8 +122,8 @@ class swap_classifier(Instruction):
     def circuit(self):
         return self.definition
     
-def process(result, classtype=swap_classifier):
-    if classtype is swap_classifier:
+def process(result, classtype=Swap_classifier):
+    if classtype is Swap_classifier:
         c00 = result.get('00', 0)
         c01 = result.get('01', 0)
         c10 = result.get('10', 0)
@@ -143,6 +143,6 @@ if __name__ == '__main__':
     weight = [1,1,1]
     test = [1,0, 0]
 
-    classifier = swap_classifier(weight, [x1, x2, x3], label, test)
+    classifier = Swap_classifier(weight, [x1, x2, x3], label, test)
     swap_qc = classifier.circuit()
     swap_qc.draw('mpl')
