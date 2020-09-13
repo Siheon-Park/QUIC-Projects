@@ -115,8 +115,8 @@ class Swap_classifier(Instruction):
             qc.cswap(qr_a, qr_x[i], qr_xt[i])
         qc.h(qr_a)
         # measure
-        qc.measure(qr_a, cr[0])
-        qc.measure(qr_y, cr[1])
+        qc.measure(qr_a, cr[0]) # pylint: disable=no-member
+        qc.measure(qr_y, cr[1]) # pylint: disable=no-member
         self.definition = qc
 
     def circuit(self):
