@@ -1,4 +1,3 @@
-
 import math
 import numpy as np
 from typing import List, Optional, Any, Dict
@@ -8,10 +7,12 @@ from qiskit.circuit import QuantumRegister
 from qiskit.circuit import ClassicalRegister
 from qiskit.circuit import Instruction, Gate
 from qiskit.circuit.library.standard_gates.x import XGate
-from qiskit import transpile, execute
+from qiskit import transpile
 
 from prepare_state import quantum_state
 import quantum_encoder
+
+
 
 _EPS = 1e-10  # global variable used to chop very small numbers to zero
 
@@ -74,7 +75,7 @@ class Swap_classifier(Instruction):
             params[3] (ListLike): list of test data
         """
         number_of_data = self.number_of_data
-        # weight= self.weight
+        weight= self.weight
         dataset=self.dataset
         label= self.label
         testdata= self.testdata
@@ -90,7 +91,7 @@ class Swap_classifier(Instruction):
 
         qc = QuantumCircuit(qr_a, qr_i, qr_x, qr_y, qr_xt, cr, name='SWAP classifier')
         # weight and test data encoding
-        # qc.encode(weight, qr_i, name='Weight')
+        qc.encode(weight, qr_i, name='Weight')
         qc.encode(testdata, qr_xt, name='Test Data')
         qc.barrier()
         
@@ -106,28 +107,10 @@ class Swap_classifier(Instruction):
         qc.measure(qr_a, cr[0]) # pylint: disable=no-member
         qc.measure(qr_y, cr[1]) # pylint: disable=no-member
         self.definition = qc
-        self.num_qubits = qc.num_qubits
 
     def circuit(self):
         return self.definition
     
-    def execute(self, backend, **kwargs):
-        job = execute(self.circuit(), backend, **kwargs)
-        self.job = job
-        self.result = job.result()
-        return job
-
-    def process(self):
-        if self.job is None:
-            raise QiskitError
-        else:
-            result = self.result.get_counts()
-            c00 = result.get('00', 0)
-            c01 = result.get('01', 0)
-            c10 = result.get('10', 0)
-            c11 = result.get('11', 0)
-            return (c00 + c11 - c01 - c10) / sum(result.values())
-
 def process(result, classtype=Swap_classifier):
     if classtype is Swap_classifier:
         c00 = result.get('00', 0)
@@ -136,6 +119,11 @@ def process(result, classtype=Swap_classifier):
         c11 = result.get('11', 0)
         return (c00 + c11 - c01 - c10) / sum(result.values())
 
+class QuadraticOptimizer
+
+
+
+#-------------------------------------------------------------------------------
 class DataPreparationError(QiskitError):
     pass
 
@@ -152,4 +140,3 @@ if __name__ == '__main__':
     classifier = Swap_classifier(weight, [x1, x2, x3], label, test)
     swap_qc = classifier.circuit()
     swap_qc.draw('mpl')
-
