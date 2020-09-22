@@ -25,7 +25,7 @@ class CVXOPT(Optimizer):
         X = cls.data
         y = cls.label
         Y = np.array([y]).T
-        Q = matrix(Y @ Y.T * cls._kernel(X, X))
+        Q = matrix(np.multiply(Y @ Y.T ,cls.kernel(X, X)))
         p = matrix(-np.ones(y.size))
         G = matrix(np.vstack([-np.identity(y.size), np.identity(y.size)]))
         h = matrix(np.hstack([np.zeros(y.shape), C*np.ones(y.shape)]))
@@ -44,9 +44,10 @@ class SWAPOPT(Optimizer):
 class Naive(SWAPOPT):
     def __init__(self, cls:Classifier, **kwargs):
         super().__init__(cls, 'Naive SWAP')
-        alpha = 
+        rdm = np.random.randint(0, cls.data.shape[0]-1, kwargs.get('iter', 10))
         for i in range(kwargs.get('iter', 10)):
             qc = QuantumCircuit(*cls.qreg, *cls.creg, name="weight & test")
-            qc.encode(cls.data, cls.qreg[1])
+            qc.encode(cls.data, cls.qreg[rdm[i]])
+            qc.combine(cls.training_circuit)
 
         

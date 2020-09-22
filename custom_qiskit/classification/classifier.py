@@ -29,7 +29,10 @@ class SVM(Classifier):
             public: alpha, support_vector_index, support_vector
         """
         super().__init__(data, label, 'support vector machine')
-        self._kernel = lambda X, Y: np.abs(X @ Y.T)**2 if kernel=='power2' else kernel
+        if kernel=='power2':
+            self._kernel = lambda X, Y: np.abs(X @ Y.T)**2
+        else:
+            self._kernel = kernel
         self.alpha = None
         self.support_vector_index = None
         self.support_vector = None
@@ -63,8 +66,9 @@ class SVM(Classifier):
         linewidth = kwargs.get('linewidth', 1.0)
         facecolors = kwargs.get('facecolor', 'none')
         edgecolors = kwargs.get('edgecolors', 'k')
-        plt.scatter(self.data[:,0], self.data[:,1], c=self.label, cmap=cmap) 
-        plt.scatter(self.support_vector[:,0], self.support_vector[:,1], s=s, linewidth=linewidth, facecolors=facecolors, edgecolors=edgecolors)
+        plt.scatter(self.data[:,0], self.data[:,1], c=self.alpha*self.label)
+        plt.colorbar()
+        #plt.scatter(self.support_vector[:,0], self.support_vector[:,1], s=s, linewidth=linewidth, facecolors=facecolors, edgecolors=edgecolors)
         plt.grid()
         plt.title(f'{self.name}')
 
