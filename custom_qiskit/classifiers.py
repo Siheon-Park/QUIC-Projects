@@ -74,7 +74,7 @@ class Swap_classifier(Instruction):
             params[3] (ListLike): list of test data
         """
         number_of_data = self.number_of_data
-        # weight= self.weight
+        weight= self.weight
         dataset=self.dataset
         label= self.label
         testdata= self.testdata
@@ -90,7 +90,7 @@ class Swap_classifier(Instruction):
 
         qc = QuantumCircuit(qr_a, qr_i, qr_x, qr_y, qr_xt, cr, name='SWAP classifier')
         # weight and test data encoding
-        # qc.encode(weight, qr_i, name='Weight')
+        qc.encode(weight, qr_i, name='Weight')
         qc.encode(testdata, qr_xt, name='Test Data')
         qc.barrier()
         
