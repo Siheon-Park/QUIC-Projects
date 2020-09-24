@@ -18,22 +18,39 @@ from qiskit import transpile, QiskitError
 # custum qiskit
 from custom_qiskit.quantum_encoder import Encoder
 
-class CVXOPT(Optimizer):
+class QpDuel(Optimizer):
     def __init__(self, cls:Classifier, **kwargs):
+        '''
+            solve duel quadratic programming using CVXOPT
+            min_alpha alpha.T Q alpha - (ones).T alpha s.t. C>=alpha>=0, y.T*alpha=0, ((ones).T*alpha=1)
+            key words:
+                C: hyperparameter
+                Probability:bool consider larg. parameters as probability, that is sum(alpha)=1
+        '''
         super().__init__('cvx opt')
         C = 1 if kwargs.get('C')==None else kwargs.get('C')
         X = cls.data
         y = cls.label
         Y = np.array([y]).T
+        # alpha.T Q alpha - (ones).T alpha
         Q = matrix(np.multiply(Y @ Y.T ,cls.kernel(X, X)))
         p = matrix(-np.ones(y.size))
+        # C>=alpha>=0
         G = matrix(np.vstack([-np.identity(y.size), np.identity(y.size)]))
         h = matrix(np.hstack([np.zeros(y.shape), C*np.ones(y.shape)]))
-        cls._opt_dict = solvers.qp(Q, p, G, h)
+        # y.T*alpha=0, ((ones).T*alpha=1)
+        if kwargs.get('Probability') == True:
+            A = matrix(np.vstack([np.ones(y.size), y]))
+            b = matrix([1., 0.])
+        else:
+            A = matrix(y).T
+            b = matrix(0.0)
+        cls._opt_dict = solvers.qp(Q, p, G, h, A, b)
         cls._is_opt = True
         cls.alpha = np.ravel(cls._opt_dict['x'])
         cls.support_vector_index = cls.alpha>=np.mean(cls.alpha)
         cls.support_vector = cls.data[cls.support_vector_index,:]
+
 
 
 class SWAPOPT(Optimizer):

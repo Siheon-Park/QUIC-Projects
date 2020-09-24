@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
 from cvxopt import matrix, solvers
 from classification.__init__ import Classifier, Optimizer
-from classification.optimizer import CVXOPT
+from classification.optimizer import QpDuel
 
 # qiskit
 from qiskit.circuit import QuantumCircuit
@@ -19,7 +19,7 @@ from qiskit import transpile, QiskitError
 from custom_qiskit.quantum_encoder import Encoder
 
 class SVM(Classifier):
-    def __init__(self, data, label, kernel='power2'):
+    def __init__(self, data, label, kernel='power2', name='support vector machine'):
         """
             SVM
 
@@ -28,7 +28,7 @@ class SVM(Classifier):
             super @property: data, label, is_opt, name
             public: alpha, support_vector_index, support_vector
         """
-        super().__init__(data, label, 'support vector machine')
+        super().__init__(data, label, name)
         if kernel=='power2':
             self._kernel = lambda X, Y: np.abs(X @ Y.T)**2
         else:
@@ -53,24 +53,32 @@ class SVM(Classifier):
             self._is_opt = False
             self._opt_dict = None
 
-    def optimize(self, opt:Optimizer=CVXOPT, **kwargs):
+    def optimize(self, opt:Optimizer=QpDuel, **kwargs):
         opt(self, **kwargs)
 
 
     def classify(self, test:np.ndarray):
         return np.sign((self.alpha*self.label).reshape(1, -1) @ self.kernel(self.data, test)) # pylint: disable=not-callable
 
-    def plot(self, **kwargs): 
+    def plot(self, axes=plt, **kwargs):
         cmap = kwargs.get('cmap', plt.cm.coolwarm)# pylint: disable=no-member
         s = kwargs.get('s', 100)
         linewidth = kwargs.get('linewidth', 1.0)
         facecolors = kwargs.get('facecolor', 'none')
         edgecolors = kwargs.get('edgecolors', 'k')
-        plt.scatter(self.data[:,0], self.data[:,1], c=self.alpha*self.label)
-        plt.colorbar()
-        #plt.scatter(self.support_vector[:,0], self.support_vector[:,1], s=s, linewidth=linewidth, facecolors=facecolors, edgecolors=edgecolors)
-        plt.grid()
-        plt.title(f'{self.name}')
+        sv = kwargs.get('sv', True)
+        if sv:
+            sc = axes.scatter(self.data[:,0], self.data[:,1], c=self.label, cmap=cmap)
+            axes.scatter(self.support_vector[:,0], self.support_vector[:,1], s=s, linewidth=linewidth, facecolors=facecolors, edgecolors=edgecolors)
+        else:
+            sc = axes.scatter(self.data[:,0], self.data[:,1], c=self.alpha*self.label)
+        if axes==plt:
+            plt.colorbar()
+            axes.title(f'{self.name}')
+        else:
+            plt.colorbar(sc, ax=axes)
+            axes.set_title(f'{self.name}')
+        axes.grid()
 
 class SWAPclassifier(Classifier):
     def __init__(self, data, label):
