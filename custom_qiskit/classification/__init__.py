@@ -45,7 +45,7 @@ class Classifier(ABC):
         pass
     
     @abstractmethod
-    def classify(self, test):
+    def classify(self, test, **kwargs):
         pass
     
     def check_perfomance(self, test_data:np.ndarray, test_label: np.ndarray):
@@ -57,6 +57,8 @@ class Classifier(ABC):
 class Optimizer:
     def __init__(self, name:str):
         self.name = name
+        self.opt_variable = None
+        self.opt_result = None
 
 class NotSuitableClsOptPairError(BaseException):
     pass

@@ -18,6 +18,8 @@ from qiskit import transpile, QiskitError
 # custum qiskit
 from custom_qiskit.quantum_encoder import Encoder
 
+
+
 class SVM(Classifier):
     def __init__(self, data, label, kernel='power2'):
         """
@@ -55,9 +57,10 @@ class SVM(Classifier):
 
     def optimize(self, opt:Optimizer=CVXOPT, **kwargs):
         opt(self, **kwargs)
+        self.optimizer = opt
 
 
-    def classify(self, test:np.ndarray):
+    def classify(self, test:np.ndarray, **kwargs):
         return np.sign((self.alpha*self.label).reshape(1, -1) @ self.kernel(self.data, test)) # pylint: disable=not-callable
 
     def plot(self, **kwargs): 
@@ -81,7 +84,6 @@ class SWAPclassifier(Classifier):
             public: alpha, support_vector_index, support_vector
         """
         super().__init__(data, label, 'SWAP classifier')
-        self.alpha = None
         self.quantum_circuit = None
         self.sqrt_weight_encoding_gate = None
         
@@ -98,6 +100,7 @@ class SWAPclassifier(Classifier):
 
         self.qreg = [qr_a, qr_i, qr_x, qr_y, qr_xt]
         self.creg = [cr]
+        self.alpha = np.ones(n_data)
         qc = QuantumCircuit(*self.qreg, *self.creg, name="training & classification")
         [qc.ctrl_encode(self.data[i], i, qr_x, qr_i, name=f"Data {i}") for i in range(n_data)] # data encoding
         [qc.ctrl_x(i, qr_y, qr_i) if label[i]>0 else None for i in range(n_data)] # label encoding
@@ -113,8 +116,9 @@ class SWAPclassifier(Classifier):
 
     def optimize(self, opt:Optimizer, **kwargs):
         opt(self, **kwargs)
+        self.optimizer = opt
 
-    def classify(self, test: np.ndarray):
+    def classify(self, test: np.ndarray, **kwargs):
         pass
 
 
