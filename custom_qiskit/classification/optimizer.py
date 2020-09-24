@@ -28,7 +28,7 @@ class QpDuel(Optimizer):
                 Probability:bool consider larg. parameters as probability, that is sum(alpha)=1
         '''
         super().__init__('cvx opt')
-        C = 1 if kwargs.get('C')==None else kwargs.get('C')
+        C = kwargs.get('C', None)
         X = cls.data
         y = cls.label
         Y = np.array([y]).T
@@ -36,8 +36,12 @@ class QpDuel(Optimizer):
         Q = matrix(np.multiply(Y @ Y.T ,cls.kernel(X, X)))
         p = matrix(-np.ones(y.size))
         # C>=alpha>=0
-        G = matrix(np.vstack([-np.identity(y.size), np.identity(y.size)]))
-        h = matrix(np.hstack([np.zeros(y.shape), C*np.ones(y.shape)]))
+        if C == None:
+            G = matrix(-np.identity(y.size)).T
+            h = matrix(np.zeros(y.shape))
+        else:
+            G = matrix(np.vstack([-np.identity(y.size), np.identity(y.size)]))
+            h = matrix(np.hstack([np.zeros(y.shape), C*np.ones(y.shape)]))
         # y.T*alpha=0, ((ones).T*alpha=1)
         if kwargs.get('Probability') == True:
             A = matrix(np.vstack([np.ones(y.size), y]))
