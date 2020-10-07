@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
 from cvxopt import matrix, solvers
-from classification.__init__ import Classifier, Optimizer, NotSuitableClsOptPairError
+from classification import *
 
 
 # qiskit
@@ -52,7 +52,7 @@ class QpDuel(Optimizer):
         cls._opt_dict = solvers.qp(Q, p, G, h, A, b)
         cls._is_opt = True
         cls.alpha = np.ravel(cls._opt_dict['x'])
-        cls.support_vector_index = cls.alpha>=np.mean(cls.alpha)
+        cls.support_vector_index = cls.alpha>(max(cls.alpha)/10)
         cls.support_vector = cls.data[cls.support_vector_index,:]
 
 
@@ -62,13 +62,27 @@ class SWAPOPT(Optimizer):
         super().__init__(name)
         if cls.name != 'SWAP classifier': raise NotSuitableClsOptPairError 
 
-class Naive(SWAPOPT):
+class EqualWeight(SWAPOPT):
     def __init__(self, cls:Classifier, **kwargs):
-        super().__init__(cls, 'Naive SWAP')
-        rdm = np.random.randint(0, cls.data.shape[0]-1, kwargs.get('iter', 10))
-        for i in range(kwargs.get('iter', 10)):
-            qc = QuantumCircuit(*cls.qreg, *cls.creg, name="weight & test")
-            qc.encode(cls.data, cls.qreg[rdm[i]])
-            qc.combine(cls.training_circuit)
+        super().__init__(cls, 'Equal weight SWAP')
+        weight = np.sqrt(np.ones(cls.label.shape))
+        qc = QuantumCircuit(*(cls.qreg+cls.creg), name='weight circuit')
+        qc.encode(weight, cls.qreg[1], 'Equal weight')
+        qc = qc.combine(cls.training_circ)
+        cls.training_circ = qc
+
+class QMimicSVM(SWAPOPT):
+    def __init__(self, cls:Classifier, **kwargs):
+        opt_cls = kwargs.get('mimic')
+        if opt_cls is None:
+            raise OptimizerError('keward argument "mimic" is missing')
+        if not isinstance(opt_cls, Classifier):
+            raise OptimizerError('"mimic" is not Classifier instance')
+        super().__init__(cls, 'Quantum Mimic SVM')
+        weight = np.sqrt(opt_cls.alpha)
+        qc = QuantumCircuit(*(cls.qreg+cls.creg), name='Mimic SVM circuit')
+        qc.encode(weight, cls.qreg[1], 'Classically Optimized Weight')
+        qc = qc.combine(cls.training_circ)
+        cls.training_circ = qc
 
         

@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
 from cvxopt import matrix, solvers
-from classification.__init__ import Classifier, Optimizer
+from classification import *
 from classification.optimizer import QpDuel
 
 # qiskit
@@ -14,6 +14,7 @@ from qiskit.circuit import Instruction, Gate
 from qiskit.circuit.library.standard_gates import XGate, ZGate
 from qiskit.extensions.quantum_initializer.initializer import Initialize
 from qiskit import transpile, QiskitError
+from qiskit import execute
 
 # custum qiskit
 from custom_qiskit.quantum_encoder import Encoder
@@ -58,7 +59,15 @@ class SVM(Classifier):
 
 
     def classify(self, test:np.ndarray):
-        return np.sign((self.alpha*self.label).reshape(1, -1) @ self.kernel(self.data, test)) # pylint: disable=not-callable
+        svi = self.support_vector_index
+        #return np.sign((self.alpha*self.label).reshape(1, -1) @ self.kernel(self.data, test)) # pylint: disable=not-callable
+        return np.sign((self.alpha[svi]*self.label[svi]).reshape(1, -1) @ self.kernel(self.support_vector, test))
+
+    def check_perfomance(self, test_data:np.ndarray, test_label: np.ndarray, **kwargs):
+        _temp = self.classify(test_data)==test_label
+        performance = np.sum(_temp)/_temp.size
+        self.testerr = 1 - performance
+        return performance
 
     def plot(self, axes=plt, **kwargs):
         cmap = kwargs.get('cmap', plt.cm.coolwarm)# pylint: disable=no-member
@@ -122,7 +131,59 @@ class SWAPclassifier(Classifier):
     def optimize(self, opt:Optimizer, **kwargs):
         opt(self, **kwargs)
 
-    def classify(self, test: np.ndarray):
-        pass
+    def classify(self, test: np.ndarray, backend=None, **kwargs):
+        """if backend is None, return classification circuit(s)"""
+        if test.ndim > 1:
+            qc = [self._construct_circuit_with(t) for t in test] 
+        else: 
+            qc = self._construct_circuit_with(test)
+        self.classifier_circ = qc
+        if backend is not None:
+            jobs = execute(qc, backend, **kwargs)
+            return self._process(jobs.result().get_counts())
+        else:
+            return qc
 
+    def check_perfomance(self, test_data:np.ndarray, test_label: np.ndarray, backend, **kwargs):
+        _temp = self.classify(test_data, backend)==test_label
+        performance = np.sum(_temp)/_temp.size
+        self.testerr = 1 - performance
+        return performance
 
+    def _construct_circuit_with(self, test:np.ndarray):
+        qc = QuantumCircuit(*(self.qreg+self.creg), name='classifier circuit')
+        qc.encode(test, self.qreg[-1], 'test data')
+        qc = qc.combine(self.training_circ)      
+        return qc  
+    
+    def _process(self, results):
+        labels =[]
+        for result in results:
+            c00 = result.get('00', 0)
+            c01 = result.get('01', 0)
+            c10 = result.get('10', 0)
+            c11 = result.get('11', 0)
+            labels.append(-np.sign((c00+c11-c01-c10)/(c00+c01+c10+c11))) # convention 
+        return np.array(labels)
+
+class QMinicClassifier(SWAPclassifier):
+    def __init__(self, svm:SVM):
+        """
+            SWAP classifier that mimics classical svm
+
+            super @property: data, label, is_opt, name
+            public: alpha, support_vector_index, support_vector
+        """
+        data = svm.support_vector
+        label = svm.label[svm.support_vector_index]
+        super().__init__(data, label)
+        self.original_svm = svm
+    
+    def optimize(self):
+        svi = self.original_svm.support_vector_index
+        alpha = self.original_svm.alpha
+        weight = np.sqrt(alpha[svi])
+        qc = QuantumCircuit(*(self.qreg+self.creg), name='Mimic SVM circuit')
+        qc.encode(weight, self.qreg[1], 'Optimized Weight')
+        qc = qc.combine(self.training_circ)
+        self.training_circ = qc

@@ -19,6 +19,7 @@ class Classifier(ABC):
         self._name=name
         self._is_opt = False
         self._opt_dict = None
+        self.testerr = None
 
     @property
     def data(self):
@@ -40,23 +41,14 @@ class Classifier(ABC):
     def opt_dict(self):
         return self._opt_dict
 
-    @abstractmethod
-    def optimize(self, **kwargs):
-        pass
-    
-    @abstractmethod
-    def classify(self, test):
-        pass
-    
-    def check_perfomance(self, test_data:np.ndarray, test_label: np.ndarray):
-        _temp = self.classify(test_data)==test_label
-        performance = np.sum(_temp)/_temp.size
-        return performance
-
 
 class Optimizer:
     def __init__(self, name:str):
         self.name = name
 
 class NotSuitableClsOptPairError(BaseException):
+    pass
+class ClassifierError(BaseException):
+    pass
+class OptimizerError(BaseException):
     pass
