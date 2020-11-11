@@ -24,6 +24,7 @@ class Encoder(Initialize):
     def __init__(self, params, name="Encoder"):
         nparams = quantum_state(params).state
         super().__init__(nparams)
+        super().__init__(params)
         self.name = name
         self.original_data = params
 
@@ -57,7 +58,7 @@ class Encoder(Initialize):
         gate = self.definition.to_gate(
             parameter_map=parameter_map, label=label)
         gate.name = self.name
-        gate.params = self.params
+        gate.params = np.real(self.params)
         return gate
 
 def _valid_qubits(self, qubits)->List:

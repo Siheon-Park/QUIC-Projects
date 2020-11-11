@@ -2,8 +2,8 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
-from cvxopt import matrix, solvers
-from classification import *
+from cvxopt import matrix, solvers # pylint: disable=import-error
+from classification import * # pylint: disable=unused-wildcard-import
 from classification.optimizer import QpDuel
 
 # qiskit
@@ -60,7 +60,7 @@ class SVM(Classifier):
 
     def classify(self, test:np.ndarray):
         svi = self.support_vector_index
-        #return np.sign((self.alpha*self.label).reshape(1, -1) @ self.kernel(self.data, test)) # pylint: disable=not-callable
+        # return np.sign((np.random.rand(*self.alpha.shape)*self.label).reshape(1, -1) @ self.kernel(self.data, test)) # pylint: disable=not-callable
         return np.sign((self.alpha[svi]*self.label[svi]).reshape(1, -1) @ self.kernel(self.support_vector, test))
 
     def check_perfomance(self, test_data:np.ndarray, test_label: np.ndarray, **kwargs):

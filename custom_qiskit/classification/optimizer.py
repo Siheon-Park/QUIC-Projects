@@ -2,8 +2,8 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
-from cvxopt import matrix, solvers
-from classification import *
+from cvxopt import matrix, solvers # pylint: disable=import-error
+from classification import * # pylint: disable=unused-wildcard-import
 
 
 # qiskit
