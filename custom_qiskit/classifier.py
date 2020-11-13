@@ -54,7 +54,7 @@ class Classifier:
 
 class SVM(Classifier):
     ''' SVM machine to calculate ground truth duel coefficients '''
-    def __init__(self, data:np.ndarray, label:np.ndarray, C:int):
+    def __init__(self, data:np.ndarray, label:np.ndarray, C:int=None):
         super().__init__(data, label)
         self.C = C
 
@@ -64,7 +64,7 @@ class SVM(Classifier):
             0<= alpha <= C
             alpha.T y = 0
             '''
-        bnds = tuple(zip(np.zeros(self.num_data), self.C*np.ones(self.num_data)))
+        bnds = tuple([(0, self.C) for i in range(self.num_data)])
         cnts = {'type':'eq', 'fun':self.IZZval}
         ret = sp.optimize.minimize(self.objective_function, initial_point, method=method, bounds = bnds, constraints=cnts, options=options)
         self.opt_result = ret
