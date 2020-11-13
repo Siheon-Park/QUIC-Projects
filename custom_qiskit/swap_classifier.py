@@ -4,8 +4,8 @@ from qiskit.circuit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit import QiskitError
 from qiskit import execute, Aer
 
-from entangler import Entangler
-from classifier import SVM, InvalidDataError
+from .entangler import Entangler
+from .classifier import SVM, InvalidDataError
 
 class _SWAP_classifier(SVM):
     """ swap classifier parent class """
