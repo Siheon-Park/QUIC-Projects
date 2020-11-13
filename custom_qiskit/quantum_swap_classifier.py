@@ -4,9 +4,9 @@ import scipy as sp
 from qiskit.circuit import QuantumCircuit
 from qiskit import execute
 
-import quantum_encoder
-from swap_classifier import _SWAP_classifier
-from classifier import _EPS, _MU
+from .quantum_encoder import encode
+from .swap_classifier import _SWAP_classifier
+from .classifier import _EPS, _MU
 
 class quantum_SWAP_classifier(_SWAP_classifier):
     """ swap classifier

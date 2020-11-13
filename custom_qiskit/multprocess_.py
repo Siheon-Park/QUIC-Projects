@@ -9,8 +9,8 @@ logger.addHandler(stream_handler)
 
 
 # %%
-from swap_classifier import pseudo_SWAP_classifier, SVM
-from datageneration import DataGeneration, iris_data
+from .swap_classifier import pseudo_SWAP_classifier, SVM
+from .datageneration import DataGeneration, iris_data
 import numpy as np
 import dill
 import os

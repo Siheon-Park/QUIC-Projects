@@ -1,5 +1,5 @@
 import dill
-from datageneration import DataGeneration
+from .datageneration import DataGeneration
 import multiprocessing as mp
 import numpy as np
 import time

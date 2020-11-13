@@ -1,9 +1,9 @@
 import numpy as np
 import scipy as sp
 
-from swap_classifier import _SWAP_classifier
-from classifier import _EPS, _MU
-from classifier import H_cbin, sigmoid
+from .swap_classifier import _SWAP_classifier
+from .classifier import _EPS, _MU
+from .classifier import H_cbin, sigmoid
 
 class pseudo_SWAP_classifier(_SWAP_classifier):
     """ mimic swap classifier

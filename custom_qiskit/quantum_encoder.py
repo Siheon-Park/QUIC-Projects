@@ -11,7 +11,7 @@ from qiskit.extensions.quantum_initializer.initializer import Initialize
 from qiskit import transpile, QiskitError
 
 # custom qiskit
-from prepare_state import quantum_state
+from .prepare_state import quantum_state
 
 
 class Encoder(Initialize):
