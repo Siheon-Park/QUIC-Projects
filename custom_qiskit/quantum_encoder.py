@@ -24,7 +24,7 @@ class Encoder(Initialize):
     def __init__(self, params, name="Encoder"):
         nparams = quantum_state(params).state
         super().__init__(nparams)
-        super().__init__(params)
+        #super().__init__(params)
         self.name = name
         self.original_data = params
 
@@ -51,7 +51,8 @@ class Encoder(Initialize):
         #    initialize_circuit.append(Reset(), [qubit])
         encode_circuit.append(encode_instr, q[:])
 
-        self.definition = transpile(encode_circuit, basis_gates=['cx', 'u3'])
+        self.definition = encode_circuit
+        #self.definition = transpile(encode_circuit, basis_gates=['cx', 'u3'])
         #self.definition = initialize_circuit
 
     def to_gate(self, parameter_map=None, label=None):

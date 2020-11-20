@@ -21,27 +21,43 @@ def DataGeneration(dim, num_train, dist, cent, normalize=True):
     y_train = np.hstack((y1, y2, y3, y4))
     return X_train, y_train
 
-def iris_data(len:int=150, a:tuple=(0, 1, 2, 3)):
-    dim = np.array([i in a for i in range(4)])
-    # import some data to play with
-    iris = datasets.load_iris()
-    # Take the first two features. We could avoid this by using a two-dim dataset
-    ind = np.random.choice(150, len, replace=False)
-    blind = np.array([True if i in ind else False for i in range(150)])
-    X = iris.data[blind, :] # pylint: disable=no-member
+def sklearn_data(kind:str, num_data:int, a:tuple, labels:tuple, option:str=None):
+    if kind == 'iris':
+        data = datasets.load_iris()
+    elif kind == 'wine':
+        data = datasets.load_wine()
+    else:
+        raise NoSuchDataset
+    full_num_data, full_dim = data.data.shape
+    # assert
+    assert len(a)<=full_dim
+    for l in labels:
+        assert l in np.unique(data.target)
+    _temp =[t in labels for t in data.target]
+    data_data = data.data[_temp, :]
+    data_target = data.target[_temp]
+    normalize=True if 'n' in option else False
+    binary=True if 'b' in option else False
+    dim = np.array([i in a for i in range(full_dim)])
+    full_num_data, full_dim = data_data.shape
+    assert num_data<=full_num_data
+    ind = np.random.choice(full_num_data, num_data, replace=False)
+    blind = np.array([True if i in ind else False for i in range(full_num_data)])
+    X = data_data[blind, :] # pylint: disable=no-member
     X = X[:,dim]
     X = X-np.mean(X)
-    X = X/np.linalg.norm(X, axis=1).reshape(-1, 1)
-    y = iris.target[blind] # pylint: disable=no-member
-    y = 2*np.ceil(y/2)-1
-    Xt = iris.data[~blind, :] # pylint: disable=no-member
+    y = data_target[blind] # pylint: disable=no-member
+    Xt = data_data[~blind, :] # pylint: disable=no-member
     Xt = Xt[:,dim]
     Xt = Xt-np.mean(Xt)
-    Xt = Xt/np.linalg.norm(Xt, axis=1).reshape(-1, 1)
-    yt = iris.target[~blind] # pylint: disable=no-member
-    yt = 2*np.ceil(yt/2)-1
+    yt = data_target[~blind] # pylint: disable=no-member
+    if normalize:
+        X = X/np.linalg.norm(X, axis=1).reshape(-1, 1)
+        Xt = Xt/np.linalg.norm(Xt, axis=1).reshape(-1, 1)
+    if binary:
+        y = 2*(y==min(labels))-1
+        yt = 2*(yt==min(labels))-1
     return X, y, Xt, yt
 
-if __name__ == "__main__":
-    X, y = iris_data(10)
-    print(X)
+class NoSuchDataset:
+    pass

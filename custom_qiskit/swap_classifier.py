@@ -3,14 +3,15 @@ import numpy as np
 from qiskit.circuit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit import QiskitError
 from qiskit import execute, Aer
+from qiskit.providers.aer import StatevectorSimulator
 
 from .entangler import Entangler
 from .classifier import SVM, InvalidDataError
 
 class _SWAP_classifier(SVM):
     """ swap classifier parent class """
-    def __init__(self, data:np.ndarray, label:np.ndarray):
-        super().__init__(data, label, None)
+    def __init__(self, data:np.ndarray, label:np.ndarray, C:int=1):
+        super().__init__(data, label, C)
         self.index_qubit_num = int(np.ceil(np.log2(self.num_data)))
         self.data_qubit_num = int(np.ceil(np.log2(self.dim_data)))
         self.theta = None
@@ -27,11 +28,9 @@ class _SWAP_classifier(SVM):
             bind_qc = qc.bind_parameters({theta:np.pi*params})
         else:
             bind_qc = qc
-        backend = Aer.get_backend('unitary_simulator')
-        _matrix = execute(bind_qc, backend=backend).result().get_unitary()
-        init_state = np.zeros(2**self.index_qubit_num)
-        init_state[0] = 1.0
-        alpha = np.abs(_matrix @ init_state)**2
+        backend = StatevectorSimulator()
+        statevec = execute(bind_qc, backend=backend).result().get_statevector(bind_qc)
+        alpha = np.abs(statevec)**2
         if not len(alpha) == self.num_data:
             raise InvalidDataError('number of data is not power of 2: may leak alpha')
         return alpha
