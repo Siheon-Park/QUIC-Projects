@@ -34,7 +34,7 @@ class pseudo_SWAP_classifier(_SWAP_classifier):
         self.alpha = self._bind_parameter_return_alpha(ret[0], self.weight_qc, self.theta)
 
     def objective_function(self, theta:np.ndarray):
-        ret = 0.5*(self.C**2)*self.ZZZval(theta)-self.C # sum alpha is 1
+        ret = 0.5*(self.C)*self.ZZZval(theta)-1 # sum alpha is 1
         return ret
 
     def qiskit_objective_function(self, theta:np.ndarray):
@@ -83,19 +83,20 @@ class pseudo_uniform_SWAP_classifier(pseudo_SWAP_classifier):
 
 class pseudo_empirical_SWAP_classifier(pseudo_SWAP_classifier):
     """" objective function now use empirical cross entropy """
-    def optimize(self, initial_point:np.ndarray, testdata:np.ndarray, testlabel:np.ndarray, method:str='SLSQP', **options):
+    def optimize(self, initial_point:np.ndarray, testdata:np.ndarray=None, testlabel:np.ndarray=None, method:str='SLSQP', **options):
         ''' optimize with scipy
             min_alpha (alpha.T Q alpha - ||alpha||1)
             alpha.T y = 0
             '''
         self.validation_data = testdata
         self.validation_label = testlabel
-        assert testdata.shape[0] == testlabel.size
+        if self.validation_data is not None:
+            assert testdata.shape[0] == testlabel.size
         cnts = {'type':'eq', 'fun':self.IZval}
         ret = sp.optimize.minimize(self.pseudo_objective_function, initial_point, method=method, constraints=cnts, options=options)
         self.opt_result = ret
         self.alpha = self._bind_parameter_return_alpha(ret.x, self.weight_qc, self.theta)
-
+    '''
     def qiskit_optimize(self, initial_point:np.ndarray, testdata:np.ndarray, testlabel:np.ndarray, optimizer, **options):
         """ ref: https://qiskit.org/textbook/ch-applications/vqe-molecules.html
             To check if equality constraint approximation is valid
@@ -106,15 +107,19 @@ class pseudo_empirical_SWAP_classifier(pseudo_SWAP_classifier):
         ret = optimizer.optimize(len(self.theta), objective_function=self.qiskit_objective_function, initial_point=initial_point, **options)
         self.opt_result = ret
         self.alpha = self._bind_parameter_return_alpha(ret[0], self.weight_qc, self.theta)
-
+    '''
     def pseudo_objective_function(self, theta:np.ndarray):
-        # TODO
-        q = sigmoid(self.C*self.ZZval(theta, self.validation_data)).reshape(-1)
-        return np.sum(H_cbin((self.validation_label+1)/2, q))/len(self.validation_label)
-
+        if self.validation_data is None:
+            q = sigmoid(self.C*self.ZZval(theta, self.data)).reshape(-1)
+            return np.sum(H_cbin((self.label+1)/2, q))/len(self.data)
+        else:
+            q = sigmoid(self.C*self.ZZval(theta, self.validation_data)).reshape(-1)
+            return np.sum(H_cbin((self.validation_label+1)/2, q))/len(self.validation_label)
+    """
     def qiskit_objective_function(self, theta:np.ndarray):
         ''' quadratic programming 
             f = sum(alpa_i alpha_j y_i y_j k(X_i, X_j) )
         '''
         # TODO
         pass
+    """

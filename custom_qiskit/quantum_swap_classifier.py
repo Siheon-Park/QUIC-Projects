@@ -38,8 +38,8 @@ class quantum_SWAP_classifier(_SWAP_classifier):
     def objective_function(self, theta:np.ndarray):
         count_dict = self.execute(theta, self.backend, **self.execute_option)
         # return self.ZZZval(count_dict) + np.log(abs(self.IZZval(count_dict))+_EPS)/_MU
-        return 0.5*(self.C**2)*self._ZZZval(count_dict)-self.C
-
+        return 0.5*(self.C)*self._ZZZval(count_dict)-1
+    '''
     def qiskit_optimize(self, backend, initial_point:np.ndarray, optimizer, **options):
         """ ref: https://qiskit.org/textbook/ch-applications/vqe-molecules.html """
         self.backend = backend
@@ -47,7 +47,7 @@ class quantum_SWAP_classifier(_SWAP_classifier):
         self.opt_result = ret
         self.optimal_theta = ret[0]
         self.alpha = self._bind_parameter_return_alpha(ret[0], self.class_weight_qc, self.class_theta)
-    
+    '''
     def ZZZval(self, theta:np.ndarray):
         count_dict = self.execute(theta, self.backend, **self.execute_option)
         return self._ZZZval(count_dict)
@@ -97,9 +97,8 @@ class quantum_SWAP_classifier(_SWAP_classifier):
         return _temp/_tot
 
     def predict(self, test:np.ndarray):
-        return np.sign(self.C*self.ZZval(self.optimal_theta, test))
-
-
+        return np.sign(self.ZZval(self.optimal_theta, test))
+        
     def check_performance(self, test:np.ndarray, testlabel:np.ndarray):
         est_y = np.array([self.predict(test[i]) for i in range(len(testlabel))])
         return sum((est_y==testlabel).reshape(-1))/len(testlabel)

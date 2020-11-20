@@ -59,7 +59,7 @@ class Classifier:
             axes.set_title(f'{self.name}')
         axes.grid()
 
-    def _tsne(self, perp:float=30):
+    def tsne(self, perp:float=30):
         return TSNE(n_components=2, perplexity=perp).fit_transform(self.data)
 
 
