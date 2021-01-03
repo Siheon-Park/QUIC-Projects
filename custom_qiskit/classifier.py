@@ -8,7 +8,7 @@ from qiskit import QiskitError
 _EPS = 1e-8
 _MU = 1e-3
 kernel = lambda X, Y: np.abs(X @ Y.T)**2
-H_cbin = lambda p, q: -p*np.log(q)-(1-p)*np.log(q)
+H_cbin = lambda p, q: -p*np.log(q)-(1-p)*np.log(1-q)
 sigmoid = lambda x: 1/(1+np.exp(-x))
 
 class Classifier:
