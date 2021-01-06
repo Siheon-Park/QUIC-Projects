@@ -151,7 +151,7 @@ class BinarySVM(Classifier):
         self.support_vectors_ = self.data[self.support_]
         self.n_support_ = len(self.support_)
 
-        if 'REDUCED' in self.mutation:
+        if 'REDUCED' not in self.mutation:
             if self.C is not None:
                 _temp = np.argwhere((self.alpha>self.C*_EPS) & (self.alpha<self.C*(1-_EPS))).flatten()
             else:
