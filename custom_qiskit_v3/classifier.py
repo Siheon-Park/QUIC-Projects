@@ -95,7 +95,7 @@ class SVM(Classifier):
         P = np.empty((n, n))
         for i in range(n):
             for j in range(n):
-                P[i, j] = 1+self.kernel(self.data[i], self.data[j], self.kernel_hyper)*self.label[i]*self.label[j]
+                P[i, j] = (1+self.kernel(self.data[i], self.data[j], self.kernel_hyper))*self.label[i]*self.label[j]
         P = cvxopt.matrix(P, (n, n))
         q = cvxopt.matrix(-1.0, (n, 1))
         if self.C is None:
@@ -128,12 +128,12 @@ class SVM(Classifier):
         P = np.empty((n, n))
         for i in range(n):
             for j in range(n):
-                P[i, j] = 1+self.kernel(self.data[i], self.data[j], self.kernel_hyper)*self.label[i]*self.label[j]
+                P[i, j] = (1+self.kernel(self.data[i], self.data[j], self.kernel_hyper))*self.label[i]*self.label[j]
         P = cvxopt.matrix(P, (n, n))
         q = cvxopt.matrix(-1.0, (n, 1))
         h = cvxopt.matrix(np.zeros(n))
         G = cvxopt.matrix(-np.eye(n))
-        A = cvxopt.matrix(np.ones_like(self.label), (1, n))
+        A = cvxopt.matrix(np.ones_like(self.label), (1, n), 'd')
         b = cvxopt.matrix(self.C, (1, 1))
         cvxopt.solvers.options['show_progress'] = False
         sol = cvxopt.solvers.qp(P, q, G, h, A, b)
