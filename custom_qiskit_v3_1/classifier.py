@@ -1,27 +1,36 @@
 import numpy as np
-import scipy as sp
-import matplotlib.pyplot as plt 
-
+from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
-from qiskit import QiskitError
+from sklearn.metrics import accuracy_score
+import pickle
 
 import cvxopt
 
 _EPS = 1e-5
-_MU = 1e-3
-kernel = lambda X, Y: np.abs(X @ Y.T)**2
-H_cbin = lambda p, q: -p*np.log(q)-(1-p)*np.log(1-q)
-sigmoid = lambda x: 1/(1+np.exp(-x))
 
-def Pow2_kernel(X, Y, gamma):
-    return np.dot(X, Y)**2
+class Kernel:
+    def __init__(self, kind:str='Pow2', gamma:float=None) -> None:
+        self.kind = kind
+        self.gamma = gamma
 
-def linear_kernel(X, Y, gamma):
-    return np.dot(X, Y)
+    def __call__(self, X, Y):
+        if self.kind == 'RBF':
+            kernel = lambda X, Y: np.exp(-self.gamma/2*np.linalg.norm(X-Y)**2)
 
-def RBF_kernel(X1, X2, gamma):
-    return np.exp(-gamma/2*(np.linalg.norm(X1-X2)**2))
+        elif self.kind == 'Pow2':
+            kernel = lambda X, Y: np.abs(X @ Y.T)**2
 
+        elif self.kind == 'linear':
+            kernel = lambda X, Y: X @ Y.T
+
+        else:
+            kernel = None
+
+        return kernel(X, Y)
+
+    def __repr__(self) -> str:
+        return self.kind
+        
 class Classifier:
     def __init__(self, data:np.ndarray, label:np.ndarray):
         self.data = data
@@ -73,90 +82,172 @@ class Classifier:
     def tsne(self, perp:float=30):
         return TSNE(n_components=2, perplexity=perp).fit_transform(self.data)
 
+    def save(self, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump(self, f)
 
-class SVM(Classifier):
-    ''' SVM machine to calculate ground truth duel coefficients '''
-    def __init__(self, data:np.ndarray, label:np.ndarray, C:float=None):
-        super().__init__(data, label)
-        self.C = C if C is None else float(C)
+    @staticmethod
+    def load(filename):
+        with open(filename, 'rb') as f:
+            cls = pickle.load(f)
+        return cls
 
-    def optimize(self, kernel, kernel_hyper, option:str):
-        if option == 'svm':
-            self.svm_optimize(kernel=kernel, kernel_hyper=kernel_hyper)
-        elif option == 'qsvm':
-            self.qsvm_optimize(kernel=kernel, kernel_hyper=kernel_hyper)
-        else:
-            pass
-
-    def svm_optimize(self, kernel, kernel_hyper):
+class BinarySVM(Classifier):
+    def __init__(self, kernel:Kernel, C:float=None, mutation:str='SVM')->None:
         self.kernel = kernel
-        self.kernel_hyper = kernel_hyper
-        n = self.num_data
-        P = np.empty((n, n))
-        for i in range(n):
-            for j in range(n):
-                P[i, j] = 1+self.kernel(self.data[i], self.data[j], self.kernel_hyper)*self.label[i]*self.label[j]
-        P = cvxopt.matrix(P, (n, n))
-        q = cvxopt.matrix(-1.0, (n, 1))
-        if self.C is None:
-            h = cvxopt.matrix(np.zeros(n))
-            G = cvxopt.matrix(-np.eye(n))
-        else:
-            G1 = np.eye(n)
-            G2 = -np.eye(n)
-            h1 = self.C*np.ones(n)
-            h2 = np.zeros(n)
-            h = cvxopt.matrix(np.concatenate([h1, h2]), (2*n, 1))
-            G = cvxopt.matrix(np.vstack([G1, G2]), (2*n, n))
-        cvxopt.solvers.options['show_progress'] = False
-        sol = cvxopt.solvers.qp(P, q, G, h, None, None)
+        self.C = C
+        _options = ['SVM', 'QASVM', 'REDUCED_SVM', 'REDUCED_QASVM']
+        assert mutation in _options
+        self.mutation = mutation
 
+    def __repr__(self) -> str:
+        str_list=[]
+        str_list.append(f'{self.name}:')
+        str_list.append(f'\n\tKernel: {self.kernel}')
+        str_list.append(f'\n\tHyperParameter: {self.C}')
+        str_list.append(f'\n\tOptimization Status: {self.status}')
+        str_list.append(f'\n\tMutation: {self.mutation}')
+        str_list.append(f'\n\tIterations: {self.iterations}')
+        return ''.join(str_list)
+
+    def predict(self, test:np.ndarray):
+        prediction = []
+        for xt in test:
+            _temp = self.b + sum(self.alpha*self.polary*np.array([self.kernel(xt, x) for x in self.data]))
+            if _temp >0:
+                prediction.append(1.0)
+            else:
+                prediction.append(0.0)
+        return np.array(prediction)
+
+    def accuracy(self, test:np.ndarray, testlabel:np.ndarray):
+        return accuracy_score(self.predict(test), testlabel)
+
+    def fit(self, X:np.ndarray, y:np.ndarray)->None:
+        Classifier.__init__(self, X, y)
+        self.polary = 2*y-1
+        if self.mutation=='REDUCED_SVM':
+            P, q, G, h, A, b = _Matrix_Helper.__find_matrix__REDUCED_SVM__(self)
+        elif self.mutation=='REDUCED_QASVM':
+            P, q, G, h, A, b = _Matrix_Helper.__find_matrix__REDUCED_QASVM__(self)
+        elif self.mutation=='SVM':
+            P, q, G, h, A, b = _Matrix_Helper.__find_matrix__SVM__(self)
+        elif self.mutation=='QASVM':
+            P, q, G, h, A, b = _Matrix_Helper.__find_matrix__QASVM__(self)
+        else:
+            P, q, G, h, A, b = None
+        
+        cvxopt.solvers.options['show_progress'] = True
+        sol = cvxopt.solvers.qp(P, q, G, h, A, b)
+
+        self.status = sol['status']
+        self.iterations = sol['iterations']
         self.alpha = np.array(sol['x']).flatten()
+
         if self.C is not None:
             self.support_ = np.argwhere(self.alpha>self.C*_EPS).flatten()
         else:
             self.support_ = np.argwhere(self.alpha>_EPS).flatten()
         self.support_vectors_ = self.data[self.support_]
         self.n_support_ = len(self.support_)
-        self.b = np.sum(self.alpha*self.label)
 
-    def qsvm_optimize(self, kernel, kernel_hyper):
-        assert self.C is not None
-        self.kernel = kernel
-        self.kernel_hyper = kernel_hyper
-        n = self.num_data
+        if 'REDUCED' in self.mutation:
+            if self.C is not None:
+                _temp = np.argwhere((self.alpha>self.C*_EPS) & (self.alpha<self.C*(1-_EPS))).flatten()
+            else:
+                _temp = np.argwhere(self.alpha>_EPS).flatten()
+            b = 0
+            for ind in _temp:
+                b += self.polary[ind] - sum(self.alpha*self.polary*np.array([self.kernel(self.data[ind], x) for x in self.data]))
+            if b is not 0:
+                self.b = b/len(_temp)
+            else:
+                self.b = b
+        else:
+            self.b = np.sum(self.alpha*self.polary)
+
+class _Matrix_Helper:
+
+    @staticmethod
+    def __find_matrix__REDUCED_SVM__(cls):
+        n = cls.num_data
         P = np.empty((n, n))
         for i in range(n):
             for j in range(n):
-                P[i, j] = 1+self.kernel(self.data[i], self.data[j], self.kernel_hyper)*self.label[i]*self.label[j]
-        P = cvxopt.matrix(P, (n, n))
-        q = cvxopt.matrix(-1.0, (n, 1))
-        h = cvxopt.matrix(np.zeros(n))
-        G = cvxopt.matrix(-np.eye(n))
-        A = cvxopt.matrix(np.ones_like(self.label), (1, n))
-        b = cvxopt.matrix(self.C, (1, 1))
-        cvxopt.solvers.options['show_progress'] = False
-        sol = cvxopt.solvers.qp(P, q, G, h, A, b)
+                P[i, j] = (1+cls.kernel(cls.data[i], cls.data[j]))*cls.polary[i]*cls.polary[j]
+        P = cvxopt.matrix(P, (n, n), 'd')
+        q = cvxopt.matrix(-1.0, (n, 1), 'd')
+        if cls.C is None:
+            h = cvxopt.matrix(0.0, (n,1), 'd')
+            G = cvxopt.matrix(-np.eye(n), (n,n), 'd')
+        else:
+            G1 = np.eye(n)
+            G2 = -np.eye(n)
+            h1 = cls.C*np.ones(n)
+            h2 = np.zeros(n)
+            h = cvxopt.matrix(np.concatenate([h1, h2]), (2*n, 1), 'd')
+            G = cvxopt.matrix(np.vstack([G1, G2]), (2*n, n), 'd')
+        return P, q, G, h, None, None
 
-        self.alpha = np.array(sol['x']).flatten()
-        self.support_ = np.argwhere(self.alpha>self.C*_EPS).flatten()
-        self.support_vectors_ = self.data[self.support_]
-        self.n_support_ = len(self.support_)
-        self.b = np.sum(self.alpha*self.label)
+    @staticmethod
+    def __find_matrix__REDUCED_QASVM__(cls):
+        n = cls.num_data
+        P = np.empty((n, n))
+        for i in range(n):
+            for j in range(n):
+                P[i, j] = (1+cls.kernel(cls.data[i], cls.data[j]))*cls.polary[i]*cls.polary[j]
+        P = cvxopt.matrix(P, (n, n), 'd')
+        A = cvxopt.matrix(1.0, (1, n), 'd')
+        h = cvxopt.matrix(0.0, (n, 1), 'd')
+        G = cvxopt.matrix(-np.eye(n), (n,n), 'd')
+        if cls.C is None:
+            b = cvxopt.matrix(1.0, (1, 1), 'd')
+            q = cvxopt.matrix(0.0, (n, 1), 'd')
+        else:
+            b = cvxopt.matrix(cls.C, (1, 1), 'd')
+            q = cvxopt.matrix(-1.0, (n, 1), 'd')
+        return P, q, G, h, A, b
 
-    def predict(self, test:np.ndarray):
-        prediction = []
-        for xt in test:
-            _temp = self.b + sum(self.alpha*self.label*np.array([self.kernel(xt, x, self.kernel_hyper) for x in self.data]))
-            if _temp >0:
-                prediction.append(1.0)
-            else:
-                prediction.append(-1.0)
-        return np.array(prediction)
+    @staticmethod
+    def __find_matrix__SVM__(cls):
+        n = cls.num_data
+        P = np.empty((n, n))
+        for i in range(n):
+            for j in range(n):
+                P[i, j] = cls.kernel(cls.data[i], cls.data[j])*cls.polary[i]*cls.polary[j]
+        P = cvxopt.matrix(P, (n, n), 'd')
+        q = cvxopt.matrix(-1.0, (n, 1), 'd')
+        A = cvxopt.matrix(cls.polary, (1, n), 'd')
+        b = cvxopt.matrix(0.0, (1, 1), 'd')
+        if cls.C is None:
+            h = cvxopt.matrix(0.0, (n,1), 'd')
+            G = cvxopt.matrix(-np.eye(n), (n,n), 'd')
+        else:
+            G1 = np.eye(n)
+            G2 = -np.eye(n)
+            h1 = cls.C*np.ones(n)
+            h2 = np.zeros(n)
+            h = cvxopt.matrix(np.concatenate([h1, h2]), (2*n, 1), 'd')
+            G = cvxopt.matrix(np.vstack([G1, G2]), (2*n, n), 'd')
+        return P, q, G, h, A, b
 
-    def accuracy(self, test:np.ndarray, testlabel:np.ndarray):
-        return sum(self.predict(test)==testlabel)/len(testlabel)
+    @staticmethod
+    def __find_matrix__QASVM__(cls):
+        n = cls.num_data
+        P = np.empty((n, n))
+        for i in range(n):
+            for j in range(n):
+                P[i, j] = cls.kernel(cls.data[i], cls.data[j])*cls.polary[i]*cls.polary[j]
+        P = cvxopt.matrix(P, (n, n), 'd')
+        q = cvxopt.matrix(-1.0, (n, 1), 'd')
+        A1 = cls.polary
+        A2 = np.ones(n) if cls.C is None else cls.C*np.ones(n)
+        A = cvxopt.matrix(np.vstack([A1, A2]), (2, n), 'd')
+        b = cvxopt.matrix([0.0, 1.0], (2, 1), 'd')
+        h = cvxopt.matrix(0.0, (n,1), 'd')
+        G = cvxopt.matrix(-np.eye(n), (n,n), 'd')
+        return P, q, G, h, A, b
 
 # error class
-class InvalidDataError(QiskitError):
+class InvalidDataError:
     pass
