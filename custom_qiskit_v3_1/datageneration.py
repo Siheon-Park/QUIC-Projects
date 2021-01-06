@@ -35,6 +35,8 @@ class Sklearn_DataLoader(object):
             _temp = [t in labels for t in label]
             data = data[_temp]
             label = label[_temp]
+        
+        self.limit_num_data = len(label)
 
         self.lb = LabelBinarizer()
         self.yhot = self.lb.fit_transform(label)
@@ -53,8 +55,15 @@ class Sklearn_DataLoader(object):
             return:
                 X, y, Xt, yt - training data, training label, test data, test label
         """
+        assert num_data>0
         self.label = self.yhot[:,true_hot].flatten()
-        X, Xt, y, yt = train_test_split(self.data, self.label, train_size = num_data, shuffle=shuffle, stratify=self.yhot)
+        if num_data < self.limit_num_data:
+            X, Xt, y, yt = train_test_split(self.data, self.label, train_size = num_data, shuffle=shuffle, stratify=self.yhot)
+        else:
+            X = self.data
+            y = self.label
+            Xt = None
+            yt = None
         return X, y, Xt, yt
 
 class NotValidDataTypeError:
