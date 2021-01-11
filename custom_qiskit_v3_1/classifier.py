@@ -10,6 +10,8 @@ _EPS = 1e-5
 
 class Kernel:
     def __init__(self, kind:str='Pow2', gamma:float=None) -> None:
+        poss = ['Pow2', 'RBF', 'linear', 'Phase']
+        assert kind in poss
         self.kind = kind
         self.gamma = gamma
 
@@ -23,10 +25,20 @@ class Kernel:
         elif self.kind == 'linear':
             kernel = lambda X, Y: X @ Y.T
 
+        elif self.kind == 'Phase':
+            def PhaseKernel(X, Y):
+                assert len(X)==len(Y)
+                N = len(X)
+                cos = sum([np.cos(X[i]-Y[i]) for i in range(N)])**2
+                sin = sum([np.cos(X[i]-Y[i]) for i in range(N)])**2
+                return (cos+sin)/N/N
+            kernel = PhaseKernel
         else:
             kernel = None
 
         return kernel(X, Y)
+
+    
 
     def __repr__(self) -> str:
         return self.kind
@@ -110,16 +122,15 @@ class BinarySVM(Classifier):
         str_list.append(f'\n\tIterations: {self.iterations}')
         return ''.join(str_list)
 
-    def predict(self, test:np.ndarray):
-        prediction = []
-        for xt in test:
-            _temp = self.b + sum(self.alpha*self.polary*np.array([self.kernel(xt, x) for x in self.data]))
-            if _temp >0:
-                prediction.append(1.0)
-            else:
-                prediction.append(0.0)
-        return np.array(prediction)
+    def f(self, test:np.ndarray):
+        if len(test.shape)==1:
+            return self.b + sum(self.alpha*self.polary*np.array([self.kernel(test, x) for x in self.data]))
+        else:
+            return np.array([self.b + sum(self.alpha*self.polary*np.array([self.kernel(xt, x) for x in self.data])) for xt in test])
 
+    def predict(self, test:np.ndarray):
+        return self.f(test)>0
+        
     def accuracy(self, test:np.ndarray, testlabel:np.ndarray):
         return accuracy_score(self.predict(test), testlabel)
 
@@ -137,7 +148,7 @@ class BinarySVM(Classifier):
         else:
             P, q, G, h, A, b = None
         
-        cvxopt.solvers.options['show_progress'] = True
+        cvxopt.solvers.options['show_progress'] = False
         sol = cvxopt.solvers.qp(P, q, G, h, A, b)
 
         self.status = sol['status']

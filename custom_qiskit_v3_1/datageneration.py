@@ -3,8 +3,17 @@ import numpy as np
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
+from matplotlib import cm, pyplot as plt
 
-class Sklearn_DataLoader(object):
+class DataGenerator(object):
+    
+    def normalize(self, data:np.ndarray, ord:int=2):
+        return (data.T/np.linalg.norm(data, axis=1, ord=ord)).T
+
+    def standardrize(self, data:np.ndarray, to:np.ndarray=0):
+        return data-(np.mean(data, axis=0)+to)
+
+class Sklearn_DataLoader(DataGenerator):
     """
         Dataset loader for iris, wine data provided in Scikit-learn package
 
@@ -40,9 +49,9 @@ class Sklearn_DataLoader(object):
 
         self.lb = LabelBinarizer()
         self.yhot = self.lb.fit_transform(label)
-        data = data-(np.mean(data, axis=0)+mean)
+        data = self.standardrize(data, mean)
         if normalize is not None:
-            data = (data.T/np.linalg.norm(data, axis=1, ord=normalize)).T
+            data = self.normalize(data, normalize)
         self.data = data
 
     def __call__(self, num_data:int, true_hot:int, shuffle:bool=True):
@@ -65,6 +74,39 @@ class Sklearn_DataLoader(object):
             Xt = None
             yt = None
         return X, y, Xt, yt
+
+class Toy2DLinearLoader(DataGenerator):
+    def __init__(self, w:tuple, b:float) -> None:
+        assert len(w)==2
+        self.w = np.array(w).reshape(-1,1)
+        self.b = b
+
+        self.A = np.array(
+            [
+                [self.w[1,0],self.w[0,0]],
+                [-self.w[0,0],self.w[1,0]]
+            ]
+        )/(np.linalg.norm(self.w)**2)
+        self.a = -self.b*self.w/(np.linalg.norm(self.w)**2)
+
+    def __call__(self, num_data:int) -> np.ndarray:
+        base = np.random.randn(num_data, 2)
+        y = base[:,1]
+        base[:,1] = np.where(y>0, y+1, y-1)
+        X = np.array([(self.A @ x.reshape(-1,1)+self.a).reshape(-1) for x in base])
+        label = np.where(y>0, 1, 0)
+        return X, label
+    
+    def plot(self, X, y, ax=plt, c = None):
+        ax.scatter(X[:,0], X[:,1], c=c if c is not None else y)
+        xrg=np.linspace(min(X[:,0]), max(X[:,0]))
+        yrg=-self.w[0,0]/self.w[1,0]*xrg-self.b/self.w[1,0]
+        ind1 = yrg<=max(X[:,1])
+        ind2 = yrg>=min(X[:,1])
+        ind = ind1*ind2
+        ax.plot(xrg[ind], yrg[ind], 'k--')
+        
+        
 
 class NotValidDataTypeError:
     pass
