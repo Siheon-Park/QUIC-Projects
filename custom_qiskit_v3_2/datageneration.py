@@ -2,33 +2,48 @@ from sys import flags
 import numpy as np
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelBinarizer, normalize, StandardScaler, MaxAbsScaler, MinMaxScaler
+from sklearn.preprocessing import LabelBinarizer, normalize, StandardScaler, MaxAbsScaler, MinMaxScaler, RobustScaler
 from matplotlib import cm, pyplot as plt
 
 class DataScaler(object):
-    def __init__(self, X:np.ndarray, scaling:str='standard', **kwargs):
-        self.scaling = scaling
-        self.kwargs = kwargs
-        if self.scaling == 'standard':
-            with_std = self.kwargs.get('with_std', False)
-            scaler = StandardScaler(with_std=with_std)
-        elif self.scaling == 'minmax':
-            feature_range = self.kwargs.get('feature_range', (0,1))
-            scaler = MinMaxScaler(feature_range=feature_range)
-        elif self.scaling == 'maxabs':
-            scaler = MaxAbsScaler()
+    def __init__(self, scaling:str='standard', *args, **kwargs):
+        slist = ['standard', 'minmax', 'maxabs', 'robust']
+        if scaling not in slist:
+            raise ValueError('Expect {:}, received {:}'.format(slist, scaling))
+        if scaling == 'standard':
+            self.scaler = StandardScaler(*args, **kwargs)
+        elif scaling == 'minmax':
+            self.scaler = MinMaxScaler(*args, **kwargs)
+        elif scaling == 'maxabs':
+            #self.scaler = MaxAbsScaler(*args, **kwargs)
+            self.scaler = MinMaxScaler(feature_range=(-1,1), *args, **kwargs)
         else:
-            scaler = StandardScaler(with_std=False, with_mean=False)
-        self.scaler = scaler.fit(X)
+            self.scaler = RobustScaler(*args, **kwargs)
 
     def __call__(self, X):
-        return self.transform(X)
+        return self.fit_transform(X)
+    
+    def fit(self, X):
+        self.scaler.fit(X)
 
     def transform(self, X):
         return self.scaler.transform(X)
 
+    def fit_transform(self, X):
+        self.fit(X)
+        return self.transform(X)
+
     def inverse_transform(self, X):
         return self.scaler.inverse_transform(X)
+
+class DataMultiScaler(DataScaler):
+    def __init__(self, *args):
+        self.scalers = args
+
+    def __call__(self, X):
+        for scaler in self.scalers:
+            X = scaler(X)
+        return X
 
 class DataLoader:
     pass
