@@ -9,12 +9,12 @@ __pycache__
 
 # spyder projects
 .spyproject
-cvx_svm.m
 
 # pdf
-.pdf
+*.pdf
 
 # homeworks
 QPCA
 homework
 tutorials
+*.m
