@@ -6,6 +6,9 @@ __pycache__
 
 # jupyter notebook checkpoints
 .ipynb_checkpoints
+# saved data
+*.dill
+*.pkl
 
 # spyder projects
 .spyproject
