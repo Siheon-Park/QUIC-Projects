@@ -156,5 +156,13 @@ class ToyBlochSphereLoader(DataLoader):
         X, y = (np.vstack((X1, X2, X3)), np.concatenate((y1, y2, y3)))
         return X+noise*np.random.randn(*X.shape), y
 
+class Only2DataOnBlochSphereLoader(DataLoader):
+    def __init__(self, x1, x2) -> None:
+        self.x1 = x1
+        self.x2 = x2
+
+    def __call__(self):
+        return np.array([self.x1, self.x2]), np.array([0, 1])
+
 class NotValidDataTypeError:
     pass
