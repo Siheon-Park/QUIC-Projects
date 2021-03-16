@@ -3,6 +3,7 @@ from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 from matplotlib import pyplot as plt
+from . import DatasetError
 
 class DataLoader:
     pass
@@ -33,7 +34,7 @@ class Sklearn_DataLoader(DataLoader):
         elif dataset=='cancer':
             ds = datasets.load_breast_cancer
         else:
-            raise NotValidDataTypeError
+            raise DatasetError('Not valid Data keyward')
         data, label = ds(return_X_y=True)
 
         if labels is not None:
@@ -163,6 +164,3 @@ class Only2DataOnBlochSphereLoader(DataLoader):
 
     def __call__(self):
         return np.array([self.x1, self.x2]), np.array([0, 1])
-
-class NotValidDataTypeError:
-    pass
