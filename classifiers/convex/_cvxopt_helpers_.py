@@ -1,5 +1,4 @@
-from sklearn.metrics import pairwise_kernels
-from sklearn.preprocessing import KernelCenterer
+
 import numpy as np
 import cvxopt
 
