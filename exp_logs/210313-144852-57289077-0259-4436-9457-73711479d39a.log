@@ -1,0 +1,99 @@
+2021-03-13 14:48:52,728 - classifiers.quantum._qasvm - INFO - QASVM (qiskit)
+	type: Dual
+	backend: qasm_simulator(ibmq_manhattan)
+	error mitigation: <class 'qiskit.ignis.mitigation.measurement.fitters.CompleteMeasFitter'>
+	(C, k): (None, 0.1)
+	accuracy: None
+2021-03-13 14:48:52,729 - classifiers.quantum._qasvm - INFO - RunConfig(max_credits=10, shots=8192)
+2021-03-13 14:48:52,729 - classifiers.quantum._qasvm - INFO - Optimizer: SPSA
+-- gradient_support_level: 1
+-- bounds_support_level: 1
+-- initial_point_support_level: 3
+-- options: {'save_steps': 1, 'last_avg': 4}
+-- max_evals_grouped: 1
+-- maxiter: 32
+-- parameters: [0.62831853 0.1        0.602      0.101      0.        ]
+-- skip_calibration: False
+
+2021-03-13 14:48:52,729 - qiskit.aqua.algorithms.vq_algorithm - INFO - Starting optimizer.
+bounds=[(-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793)]
+initial point=[ 6.59465950e-02 -2.56686626e+00 -2.49355602e+00 -2.18073964e-03
+ -2.15156456e+00 -1.02155585e-01  8.30200072e-02  2.28000943e+00
+  2.65826996e+00 -3.31157946e-01 -1.75082365e+00 -1.03940412e+00]
+2021-03-13 14:48:52,730 - qiskit.aqua.components.optimizers.spsa - DEBUG - Parameters: [0.62831853 0.1        0.602      0.101      0.        ]
+2021-03-13 14:48:52,730 - qiskit.aqua.components.optimizers.spsa - DEBUG - Calibration...
+2021-03-13 14:48:52,730 - qiskit.aqua.components.optimizers.spsa - DEBUG - calibration step # 0 of 6
+2021-03-13 14:48:59,666 - qiskit.aqua.components.optimizers.spsa - DEBUG - calibration step # 5 of 6
+2021-03-13 14:49:00,888 - qiskit.aqua.components.optimizers.spsa - DEBUG - delta_obj is 0, not calibrating (since this would set c0 to inf)
+2021-03-13 14:49:00,888 - qiskit.aqua.components.optimizers.spsa - DEBUG - Calibrated SPSA parameter c0 is 0.3839868
+2021-03-13 14:49:01,893 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 0: 0.0350222
+2021-03-13 14:49:01,894 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 0: 0.5564050
+2021-03-13 14:49:02,912 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 1: 0.1846079
+2021-03-13 14:49:02,912 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 1: 0.2036476
+2021-03-13 14:49:03,881 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 2: 0.3107312
+2021-03-13 14:49:03,881 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 2: 0.1287218
+2021-03-13 14:49:04,820 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 3: 0.3355819
+2021-03-13 14:49:04,820 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 3: 0.4096510
+2021-03-13 14:49:05,778 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 4: 0.1050851
+2021-03-13 14:49:05,778 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 4: 0.7569875
+2021-03-13 14:49:06,731 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 5: 0.6441376
+2021-03-13 14:49:06,733 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 5: 1.8520511
+2021-03-13 14:49:07,734 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 6: 0.1515600
+2021-03-13 14:49:07,734 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 6: 0.2878703
+2021-03-13 14:49:08,686 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 7: 0.4436825
+2021-03-13 14:49:08,686 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 7: 0.1327277
+2021-03-13 14:49:09,625 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 8: 0.3238089
+2021-03-13 14:49:09,625 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 8: 0.6394555
+2021-03-13 14:49:10,585 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 9: 0.1149153
+2021-03-13 14:49:10,585 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 9: 0.1112509
+2021-03-13 14:49:11,505 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 10: 0.1302011
+2021-03-13 14:49:11,506 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 10: 0.1123362
+2021-03-13 14:49:12,433 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 11: 0.1489289
+2021-03-13 14:49:12,434 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 11: 0.4634930
+2021-03-13 14:49:13,374 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 12: 0.3526140
+2021-03-13 14:49:13,374 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 12: -0.0014956
+2021-03-13 14:49:14,378 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 13: 0.5121736
+2021-03-13 14:49:14,378 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 13: 0.3792293
+2021-03-13 14:49:15,342 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 14: 0.2567759
+2021-03-13 14:49:15,342 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 14: 0.0937758
+2021-03-13 14:49:16,406 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 15: -0.0572797
+2021-03-13 14:49:16,406 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 15: 0.5529986
+2021-03-13 14:49:17,363 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 16: 0.4210930
+2021-03-13 14:49:17,363 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 16: 0.0675523
+2021-03-13 14:49:18,331 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 17: 0.6638598
+2021-03-13 14:49:18,331 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 17: -0.1507965
+2021-03-13 14:49:19,329 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 18: 1.7362783
+2021-03-13 14:49:19,329 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 18: 1.9196326
+2021-03-13 14:49:20,355 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 19: 1.2809872
+2021-03-13 14:49:20,355 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 19: 2.2044720
+2021-03-13 14:49:21,360 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 20: -0.1543620
+2021-03-13 14:49:21,360 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 20: 0.0871013
+2021-03-13 14:49:22,338 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 21: -0.1216516
+2021-03-13 14:49:22,338 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 21: 0.3743723
+2021-03-13 14:49:23,307 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 22: 0.1531014
+2021-03-13 14:49:23,308 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 22: -0.0790292
+2021-03-13 14:49:24,267 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 23: -0.2633370
+2021-03-13 14:49:24,267 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 23: 0.1020511
+2021-03-13 14:49:25,326 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 24: 0.1816813
+2021-03-13 14:49:25,326 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 24: -0.1650518
+2021-03-13 14:49:26,309 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 25: -0.1080734
+2021-03-13 14:49:26,309 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 25: 0.0437558
+2021-03-13 14:49:27,278 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 26: -0.3068782
+2021-03-13 14:49:27,278 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 26: 0.0220312
+2021-03-13 14:49:28,241 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 27: -0.1247117
+2021-03-13 14:49:28,241 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 27: -0.1497114
+2021-03-13 14:49:29,223 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 28: -0.1876733
+2021-03-13 14:49:29,223 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 28: 0.0670618
+2021-03-13 14:49:30,194 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 29: -0.1058587
+2021-03-13 14:49:30,194 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 29: 0.4022746
+2021-03-13 14:49:31,215 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 30: 0.2036334
+2021-03-13 14:49:31,215 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 30: 0.2040195
+2021-03-13 14:49:32,209 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta+ for step # 31: 0.2931967
+2021-03-13 14:49:32,209 - qiskit.aqua.components.optimizers.spsa - DEBUG - Objective function at theta- for step # 31: 0.1689293
+2021-03-13 14:49:32,695 - qiskit.aqua.components.optimizers.spsa - DEBUG - Final objective function is: 0.2861869
+2021-03-13 14:49:32,698 - classifiers.quantum._qasvm - INFO - QASVM (qiskit)
+	type: Dual
+	backend: qasm_simulator(ibmq_manhattan)
+	error mitigation: <class 'qiskit.ignis.mitigation.measurement.fitters.CompleteMeasFitter'>
+	(C, k): (None, 0.1)
+	accuracy: 0.5

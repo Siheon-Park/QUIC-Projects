@@ -1,0 +1,284 @@
+2021-03-13 18:26:42,354 - classifiers.quantum._qasvm - INFO - QASVM (qiskit)
+	type: Dual
+	backend: qasm_simulator(fake_manhattan)
+	error mitigation: <class 'qiskit.ignis.mitigation.measurement.fitters.CompleteMeasFitter'>
+	(C, k): (None, 0.1)
+	accuracy: None
+2021-03-13 18:26:42,354 - classifiers.quantum._qasvm - INFO - RunConfig(max_credits=10, shots=8192)
+2021-03-13 18:26:42,354 - classifiers.quantum._qasvm - INFO - Optimizer: MySPSA
+-- gradient_support_level: 1
+-- bounds_support_level: 1
+-- initial_point_support_level: 3
+-- options: {'save_steps': 1, 'last_avg': 16}
+-- max_evals_grouped: 1
+-- maxiter: 128
+-- parameters: [0.62831853 0.1        0.602      0.101      0.        ]
+-- skip_calibration: False
+
+2021-03-13 18:26:42,355 - qiskit.aqua.algorithms.vq_algorithm - INFO - Starting optimizer.
+bounds=[(-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793), (-3.141592653589793, 3.141592653589793)]
+initial point=[ 2.27624622  2.46931643 -3.03804586  0.22752538  2.80506864 -2.97269283
+ -2.8682231  -3.11320478 -0.42325082  0.02753792  2.33802702 -0.34872652]
+2021-03-13 18:27:08,161 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 0: 0.3167228
+2021-03-13 18:27:08,162 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 0: 0.1787302
+2021-03-13 18:27:09,524 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 1: 1.1121247
+2021-03-13 18:27:09,524 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 1: 1.3940778
+2021-03-13 18:27:11,017 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 2: 0.3144299
+2021-03-13 18:27:11,017 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 2: 0.8957879
+2021-03-13 18:27:12,470 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 3: 1.4694999
+2021-03-13 18:27:12,470 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 3: 0.9148423
+2021-03-13 18:27:13,862 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 4: 1.0190551
+2021-03-13 18:27:13,863 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 4: 1.5648596
+2021-03-13 18:27:15,293 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 5: 0.5739631
+2021-03-13 18:27:15,293 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 5: -0.0463555
+2021-03-13 18:27:16,673 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 6: 2.4695214
+2021-03-13 18:27:16,674 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 6: 1.9691260
+2021-03-13 18:27:18,086 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 7: 0.3025901
+2021-03-13 18:27:18,086 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 7: 0.2918895
+2021-03-13 18:27:19,492 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 8: 0.2494131
+2021-03-13 18:27:19,492 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 8: 0.1382460
+2021-03-13 18:27:20,923 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 9: 0.1765926
+2021-03-13 18:27:20,923 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 9: 0.2825817
+2021-03-13 18:27:22,321 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 10: 0.4079725
+2021-03-13 18:27:22,321 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 10: 0.3233213
+2021-03-13 18:27:23,701 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 11: 0.4576222
+2021-03-13 18:27:23,701 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 11: 0.7387082
+2021-03-13 18:27:25,091 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 12: 0.7812082
+2021-03-13 18:27:25,091 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 12: 1.0249699
+2021-03-13 18:27:26,478 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 13: 0.1596882
+2021-03-13 18:27:26,478 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 13: 0.1612264
+2021-03-13 18:27:27,889 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 14: 0.3193462
+2021-03-13 18:27:27,889 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 14: 0.2633425
+2021-03-13 18:27:29,267 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 15: -0.1705015
+2021-03-13 18:27:29,267 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 15: 0.4961977
+2021-03-13 18:27:30,652 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 16: 2.6599652
+2021-03-13 18:27:30,652 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 16: 3.3136433
+2021-03-13 18:27:32,046 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 17: 4.3900783
+2021-03-13 18:27:32,047 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 17: 4.4935706
+2021-03-13 18:27:33,399 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 18: 3.5018170
+2021-03-13 18:27:33,399 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 18: 4.6945507
+2021-03-13 18:27:34,824 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 19: 1.4508275
+2021-03-13 18:27:34,824 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 19: 1.3224625
+2021-03-13 18:27:36,231 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 20: 0.5182551
+2021-03-13 18:27:36,231 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 20: 1.9319105
+2021-03-13 18:27:37,643 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 21: 0.8977077
+2021-03-13 18:27:37,643 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 21: 0.5183919
+2021-03-13 18:27:39,037 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 22: 0.1891991
+2021-03-13 18:27:39,038 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 22: 0.6466037
+2021-03-13 18:27:40,441 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 23: 0.3979141
+2021-03-13 18:27:40,441 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 23: 0.1653547
+2021-03-13 18:27:41,849 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 24: 0.1996602
+2021-03-13 18:27:41,849 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 24: 0.0353275
+2021-03-13 18:27:43,239 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 25: 0.2205675
+2021-03-13 18:27:43,239 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 25: 0.2217816
+2021-03-13 18:27:44,684 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 26: 0.4774296
+2021-03-13 18:27:44,684 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 26: 0.0888319
+2021-03-13 18:27:46,093 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 27: 0.5025407
+2021-03-13 18:27:46,093 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 27: 0.4571053
+2021-03-13 18:27:47,512 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 28: 0.5370578
+2021-03-13 18:27:47,512 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 28: 0.8364453
+2021-03-13 18:27:48,904 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 29: 2.2271404
+2021-03-13 18:27:48,904 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 29: 2.7688868
+2021-03-13 18:27:50,323 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 30: 1.1431497
+2021-03-13 18:27:50,324 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 30: 0.1329361
+2021-03-13 18:27:51,718 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 31: 1.1565677
+2021-03-13 18:27:51,718 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 31: 0.6228201
+2021-03-13 18:27:53,103 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 32: 0.2496326
+2021-03-13 18:27:53,103 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 32: 1.0164241
+2021-03-13 18:27:54,524 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 33: 2.1455704
+2021-03-13 18:27:54,524 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 33: 1.7099328
+2021-03-13 18:27:55,918 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 34: 1.1285239
+2021-03-13 18:27:55,918 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 34: 2.1311752
+2021-03-13 18:27:57,312 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 35: 1.4084844
+2021-03-13 18:27:57,312 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 35: 1.8064846
+2021-03-13 18:27:58,777 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 36: 1.5347982
+2021-03-13 18:27:58,778 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 36: 0.5168516
+2021-03-13 18:28:00,159 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 37: 1.2079473
+2021-03-13 18:28:00,159 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 37: 1.7699124
+2021-03-13 18:28:01,554 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 38: 1.2748771
+2021-03-13 18:28:01,554 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 38: 0.3658104
+2021-03-13 18:28:02,969 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 39: 1.2258998
+2021-03-13 18:28:02,969 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 39: 2.1226109
+2021-03-13 18:28:04,384 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 40: 1.0548400
+2021-03-13 18:28:04,384 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 40: 0.9654002
+2021-03-13 18:28:05,792 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 41: 1.1035548
+2021-03-13 18:28:05,792 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 41: 0.8747292
+2021-03-13 18:28:07,185 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 42: 0.4308790
+2021-03-13 18:28:07,185 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 42: 1.2587324
+2021-03-13 18:28:08,588 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 43: 0.4065847
+2021-03-13 18:28:08,588 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 43: 0.3869736
+2021-03-13 18:28:09,991 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 44: 0.1711073
+2021-03-13 18:28:09,991 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 44: 0.0654579
+2021-03-13 18:28:11,429 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 45: -0.0001534
+2021-03-13 18:28:11,429 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 45: 0.1387598
+2021-03-13 18:28:12,863 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 46: 0.5360661
+2021-03-13 18:28:12,863 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 46: 0.5348617
+2021-03-13 18:28:14,261 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 47: 0.4312037
+2021-03-13 18:28:14,262 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 47: 0.3988651
+2021-03-13 18:28:15,647 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 48: 0.1058770
+2021-03-13 18:28:15,648 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 48: 0.1936160
+2021-03-13 18:28:17,039 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 49: 0.3355146
+2021-03-13 18:28:17,039 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 49: 0.0121802
+2021-03-13 18:28:18,400 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 50: 0.8925118
+2021-03-13 18:28:18,400 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 50: 0.1015065
+2021-03-13 18:28:19,797 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 51: 0.5303984
+2021-03-13 18:28:19,797 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 51: 2.0063921
+2021-03-13 18:28:21,191 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 52: 2.2462784
+2021-03-13 18:28:21,191 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 52: 2.6565194
+2021-03-13 18:28:22,538 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 53: 1.3850937
+2021-03-13 18:28:22,538 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 53: 1.2021497
+2021-03-13 18:28:23,986 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 54: 1.0971045
+2021-03-13 18:28:23,986 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 54: 0.9415579
+2021-03-13 18:28:25,383 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 55: 1.2936644
+2021-03-13 18:28:25,383 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 55: 0.4339818
+2021-03-13 18:28:26,791 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 56: 4.1067236
+2021-03-13 18:28:26,792 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 56: 4.2457745
+2021-03-13 18:28:28,182 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 57: 4.1780888
+2021-03-13 18:28:28,182 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 57: 3.9896644
+2021-03-13 18:28:29,579 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 58: 4.2400208
+2021-03-13 18:28:29,579 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 58: 3.5501940
+2021-03-13 18:28:31,026 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 59: 3.1658115
+2021-03-13 18:28:31,026 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 59: 2.4785145
+2021-03-13 18:28:32,534 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 60: 0.4997596
+2021-03-13 18:28:32,534 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 60: 0.6379530
+2021-03-13 18:28:33,963 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 61: 0.8272234
+2021-03-13 18:28:33,963 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 61: 0.5010997
+2021-03-13 18:28:35,340 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 62: 0.1689648
+2021-03-13 18:28:35,341 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 62: 0.3223383
+2021-03-13 18:28:36,722 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 63: 1.2237449
+2021-03-13 18:28:36,722 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 63: 0.2505548
+2021-03-13 18:28:38,106 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 64: 1.6631492
+2021-03-13 18:28:38,106 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 64: 1.7955657
+2021-03-13 18:28:39,502 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 65: 2.3690336
+2021-03-13 18:28:39,503 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 65: 1.0784012
+2021-03-13 18:28:40,909 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 66: 1.5465350
+2021-03-13 18:28:40,909 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 66: 2.9496607
+2021-03-13 18:28:42,295 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 67: 1.0967219
+2021-03-13 18:28:42,295 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 67: 0.8859452
+2021-03-13 18:28:43,683 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 68: 1.2704340
+2021-03-13 18:28:43,683 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 68: 0.8160926
+2021-03-13 18:28:45,098 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 69: 0.3059493
+2021-03-13 18:28:45,098 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 69: 0.4825470
+2021-03-13 18:28:46,504 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 70: 0.4434020
+2021-03-13 18:28:46,504 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 70: 0.2462317
+2021-03-13 18:28:47,903 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 71: 0.0060750
+2021-03-13 18:28:47,903 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 71: 0.5274372
+2021-03-13 18:28:49,315 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 72: 0.5043768
+2021-03-13 18:28:49,315 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 72: 0.7200933
+2021-03-13 18:28:50,739 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 73: 0.4018386
+2021-03-13 18:28:50,739 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 73: 0.2141595
+2021-03-13 18:28:52,145 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 74: 0.2098229
+2021-03-13 18:28:52,145 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 74: 0.1414996
+2021-03-13 18:28:53,541 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 75: 0.1569284
+2021-03-13 18:28:53,541 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 75: 0.0399183
+2021-03-13 18:28:54,941 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 76: 0.3008218
+2021-03-13 18:28:54,942 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 76: 0.0866254
+2021-03-13 18:28:56,366 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 77: 0.3396857
+2021-03-13 18:28:56,366 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 77: 0.3199608
+2021-03-13 18:28:57,827 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 78: 0.3987969
+2021-03-13 18:28:57,827 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 78: 0.1880586
+2021-03-13 18:28:59,238 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 79: 0.1661423
+2021-03-13 18:28:59,238 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 79: 0.4306608
+2021-03-13 18:29:00,630 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 80: 0.2452298
+2021-03-13 18:29:00,630 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 80: 0.1324985
+2021-03-13 18:29:02,055 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 81: 0.1187859
+2021-03-13 18:29:02,055 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 81: 0.2481723
+2021-03-13 18:29:03,436 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 82: 0.0123169
+2021-03-13 18:29:03,436 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 82: 0.7428078
+2021-03-13 18:29:04,838 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 83: 1.4186180
+2021-03-13 18:29:04,838 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 83: 0.3553165
+2021-03-13 18:29:06,225 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 84: 0.3548544
+2021-03-13 18:29:06,225 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 84: 0.5622143
+2021-03-13 18:29:07,625 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 85: 0.2027772
+2021-03-13 18:29:07,625 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 85: 0.7555373
+2021-03-13 18:29:09,013 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 86: 0.9345909
+2021-03-13 18:29:09,014 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 86: 0.4239964
+2021-03-13 18:29:10,426 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 87: 0.2540416
+2021-03-13 18:29:10,426 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 87: 0.1179252
+2021-03-13 18:29:11,824 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 88: 0.1301184
+2021-03-13 18:29:11,824 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 88: 0.4189131
+2021-03-13 18:29:13,282 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 89: 0.0820536
+2021-03-13 18:29:13,282 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 89: 0.3209601
+2021-03-13 18:29:14,707 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 90: 0.2562839
+2021-03-13 18:29:14,707 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 90: 0.3423555
+2021-03-13 18:29:16,086 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 91: 0.4939643
+2021-03-13 18:29:16,086 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 91: 0.5512428
+2021-03-13 18:29:17,565 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 92: 0.5539683
+2021-03-13 18:29:17,565 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 92: 0.3475836
+2021-03-13 18:29:18,960 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 93: 0.1138721
+2021-03-13 18:29:18,960 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 93: 0.3025038
+2021-03-13 18:29:20,353 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 94: 0.2017665
+2021-03-13 18:29:20,354 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 94: 0.1911573
+2021-03-13 18:29:21,759 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 95: 0.5788096
+2021-03-13 18:29:21,759 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 95: 0.1735754
+2021-03-13 18:29:23,200 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 96: 0.1857972
+2021-03-13 18:29:23,200 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 96: 0.8462007
+2021-03-13 18:29:24,607 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 97: 0.9115100
+2021-03-13 18:29:24,607 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 97: 1.0065246
+2021-03-13 18:29:26,024 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 98: 1.2504309
+2021-03-13 18:29:26,024 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 98: 0.9207850
+2021-03-13 18:29:27,442 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 99: 0.3429954
+2021-03-13 18:29:27,442 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 99: 0.8228734
+2021-03-13 18:29:28,832 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 100: 0.3508640
+2021-03-13 18:29:28,832 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 100: 0.2978732
+2021-03-13 18:29:30,225 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 101: 0.2392228
+2021-03-13 18:29:30,225 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 101: -0.0428326
+2021-03-13 18:29:31,612 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 102: 0.1793371
+2021-03-13 18:29:31,612 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 102: 0.2574838
+2021-03-13 18:29:33,012 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 103: 0.0555705
+2021-03-13 18:29:33,012 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 103: 0.2039798
+2021-03-13 18:29:34,405 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 104: 0.1517053
+2021-03-13 18:29:34,405 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 104: -0.0322059
+2021-03-13 18:29:35,826 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 105: 0.2153145
+2021-03-13 18:29:35,826 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 105: 0.0809098
+2021-03-13 18:29:37,240 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 106: 0.1390021
+2021-03-13 18:29:37,240 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 106: 0.4261105
+2021-03-13 18:29:38,629 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 107: 0.2653859
+2021-03-13 18:29:38,630 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 107: -0.0284100
+2021-03-13 18:29:40,031 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 108: 0.5159336
+2021-03-13 18:29:40,031 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 108: 0.2240721
+2021-03-13 18:29:41,397 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 109: 0.0909727
+2021-03-13 18:29:41,397 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 109: 0.2289555
+2021-03-13 18:29:42,800 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 110: 0.2089537
+2021-03-13 18:29:42,800 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 110: 0.1381469
+2021-03-13 18:29:44,190 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 111: -0.0783569
+2021-03-13 18:29:44,190 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 111: 0.2594293
+2021-03-13 18:29:45,600 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 112: 0.5889615
+2021-03-13 18:29:45,600 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 112: 0.4179736
+2021-03-13 18:29:47,002 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 113: 0.1969780
+2021-03-13 18:29:47,002 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 113: 0.4737480
+2021-03-13 18:29:48,417 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 114: 0.5201895
+2021-03-13 18:29:48,418 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 114: 0.3237761
+2021-03-13 18:29:49,816 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 115: 0.6796658
+2021-03-13 18:29:49,816 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 115: 0.3951646
+2021-03-13 18:29:51,229 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 116: 0.4263564
+2021-03-13 18:29:51,229 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 116: 0.2716471
+2021-03-13 18:29:52,616 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 117: 0.3594509
+2021-03-13 18:29:52,616 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 117: 0.1405600
+2021-03-13 18:29:54,072 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 118: 0.2542622
+2021-03-13 18:29:54,072 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 118: 0.4434539
+2021-03-13 18:29:55,454 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 119: 0.8374464
+2021-03-13 18:29:55,454 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 119: 0.5211046
+2021-03-13 18:29:56,847 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 120: 1.1458918
+2021-03-13 18:29:56,847 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 120: 0.8263507
+2021-03-13 18:29:58,272 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 121: 0.3823177
+2021-03-13 18:29:58,272 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 121: 0.4696604
+2021-03-13 18:29:59,728 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 122: 0.1602389
+2021-03-13 18:29:59,728 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 122: 0.7707133
+2021-03-13 18:30:01,167 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 123: 0.3681714
+2021-03-13 18:30:01,167 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 123: 0.2450394
+2021-03-13 18:30:02,552 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 124: 0.4752232
+2021-03-13 18:30:02,552 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 124: 0.2614762
+2021-03-13 18:30:03,935 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 125: 0.1957726
+2021-03-13 18:30:03,935 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 125: 0.3115850
+2021-03-13 18:30:05,317 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 126: 1.2806593
+2021-03-13 18:30:05,317 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 126: 0.1546407
+2021-03-13 18:30:06,795 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 127: 3.9979399
+2021-03-13 18:30:06,795 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 127: 4.3112900
+2021-03-13 18:30:07,280 - classifiers.optimizer - DEBUG - Final objective function is: 0.1378349
+2021-03-13 18:30:07,281 - classifiers.quantum._qasvm - INFO - QASVM (qiskit)
+	type: Dual
+	backend: qasm_simulator(fake_manhattan)
+	error mitigation: <class 'qiskit.ignis.mitigation.measurement.fitters.CompleteMeasFitter'>
+	(C, k): (None, 0.1)
+	accuracy: 0.5

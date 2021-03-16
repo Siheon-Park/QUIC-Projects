@@ -1,0 +1,123 @@
+2021-03-14 23:54:24,463 - classifiers.quantum.qasvm - DEBUG - Dual_QASVM (C=None, k=0.1)
+Circuit Class: Bloch_sphere_QASVM_circuit
+QuantumInstance: 
+Qiskit Terra version: 0.16.1
+Backend: 'qasm_simulator(ibmq_sydney) (None)', with following setting:
+{'basis_gates': ['cx', 'id', 'sx', 'u3', 'x'], 'coupling_map': [[0, 1], [1, 0], [1, 2], [1, 4], [2, 1], [2, 3], [3, 2], [3, 5], [4, 1], [4, 7], [5, 3], [5, 8], [6, 7], [7, 4], [7, 6], [7, 10], [8, 5], [8, 9], [8, 11], [9, 8], [10, 7], [10, 12], [11, 8], [11, 14], [12, 10], [12, 13], [12, 15], [13, 12], [13, 14], [14, 11], [14, 13], [14, 16], [15, 12], [15, 18], [16, 14], [16, 19], [17, 18], [18, 15], [18, 17], [18, 21], [19, 16], [19, 20], [19, 22], [20, 19], [21, 18], [21, 23], [22, 19], [22, 25], [23, 21], [23, 24], [24, 23], [24, 25], [25, 22], [25, 24], [25, 26], [26, 25]]}
+{'initial_layout': {Qubit(QuantumRegister(1, 'a'), 0): 3, Qubit(QuantumRegister(2, 'i'), 0): 0, Qubit(QuantumRegister(2, 'i'), 1): 4, Qubit(QuantumRegister(1, 'xi'), 0): 2, Qubit(QuantumRegister(1, 'yi'), 0): 1, Qubit(QuantumRegister(2, 'j'), 0): 9, Qubit(QuantumRegister(2, 'j'), 1): 11, Qubit(QuantumRegister(1, 'xj'), 0): 5, Qubit(QuantumRegister(1, 'yj'), 0): 8}, 'seed_transpiler': 0, 'optimization_level': 3}
+RunConfig(max_credits=10, shots=8192)
+{'timeout': None}
+{}
+{}
+Measurement mitigation: <class 'qiskit.ignis.mitigation.measurement.fitters.CompleteMeasFitter'>
+Optimizer: MySPSA
+-- gradient_support_level: 1
+-- bounds_support_level: 1
+-- initial_point_support_level: 3
+-- options: {'save_steps': 1, 'last_avg': 2}
+-- max_evals_grouped: 1
+-- maxiter: 8
+-- parameters: [0.62831853 0.1        0.602      0.101      0.        ]
+-- skip_calibration: False
+
+2021-03-14 23:54:24,464 - classifiers.quantum.qasvm - INFO - running VQAlgorithm
+2021-03-14 23:54:26,563 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 0: 0.4458764
+2021-03-14 23:54:26,564 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 0: 0.7372290
+2021-03-14 23:54:27,316 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 1: 1.5831774
+2021-03-14 23:54:27,319 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 1: 0.5088870
+2021-03-14 23:54:28,072 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 2: 3.2800169
+2021-03-14 23:54:28,075 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 2: 2.5874174
+2021-03-14 23:54:28,763 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 3: 3.7003428
+2021-03-14 23:54:28,767 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 3: 2.6522217
+2021-03-14 23:54:29,465 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 4: 0.7255710
+2021-03-14 23:54:29,465 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 4: 0.3807411
+2021-03-14 23:54:30,088 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 5: 0.1404047
+2021-03-14 23:54:30,089 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 5: 0.2584031
+2021-03-14 23:54:30,810 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 6: 0.1265435
+2021-03-14 23:54:30,810 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 6: 0.1885037
+2021-03-14 23:54:31,541 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 7: 0.3650305
+2021-03-14 23:54:31,541 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 7: 0.3774201
+2021-03-14 23:54:31,819 - classifiers.optimizer - DEBUG - Final objective function is: 0.1738561
+2021-03-14 23:54:31,820 - classifiers.quantum.qasvm - DEBUG - {'optimizer_evals': None, 'optimizer_time': 7.355241060256958, 'optimal_value': 0.17385605236111284, 'optimal_point': array([-1.57757382,  3.18149288,  0.08811024,  0.13846333]), 'optimal_parameters': {Parameter(θ[0]): -1.5775738240599235, Parameter(θ[1]): 3.1814928777197635, Parameter(θ[2]): 0.0881102384552728, Parameter(θ[3]): 0.13846333369895422}}
+2021-03-14 23:55:05,601 - classifiers.quantum.qasvm - DEBUG - Dual_QASVM (C=None, k=0.1)
+Circuit Class: Bloch_sphere_QASVM_circuit
+QuantumInstance: 
+Qiskit Terra version: 0.16.1
+Backend: 'qasm_simulator(ibmq_sydney) (None)', with following setting:
+{'basis_gates': ['cx', 'id', 'sx', 'u3', 'x'], 'coupling_map': [[0, 1], [1, 0], [1, 2], [1, 4], [2, 1], [2, 3], [3, 2], [3, 5], [4, 1], [4, 7], [5, 3], [5, 8], [6, 7], [7, 4], [7, 6], [7, 10], [8, 5], [8, 9], [8, 11], [9, 8], [10, 7], [10, 12], [11, 8], [11, 14], [12, 10], [12, 13], [12, 15], [13, 12], [13, 14], [14, 11], [14, 13], [14, 16], [15, 12], [15, 18], [16, 14], [16, 19], [17, 18], [18, 15], [18, 17], [18, 21], [19, 16], [19, 20], [19, 22], [20, 19], [21, 18], [21, 23], [22, 19], [22, 25], [23, 21], [23, 24], [24, 23], [24, 25], [25, 22], [25, 24], [25, 26], [26, 25]]}
+{'initial_layout': {Qubit(QuantumRegister(1, 'a'), 0): 3, Qubit(QuantumRegister(2, 'i'), 0): 0, Qubit(QuantumRegister(2, 'i'), 1): 4, Qubit(QuantumRegister(1, 'xi'), 0): 2, Qubit(QuantumRegister(1, 'yi'), 0): 1, Qubit(QuantumRegister(2, 'j'), 0): 9, Qubit(QuantumRegister(2, 'j'), 1): 11, Qubit(QuantumRegister(1, 'xj'), 0): 5, Qubit(QuantumRegister(1, 'yj'), 0): 8}, 'seed_transpiler': 0, 'optimization_level': 3}
+RunConfig(max_credits=10, shots=8192)
+{'timeout': None}
+{}
+{}
+Measurement mitigation: <class 'qiskit.ignis.mitigation.measurement.fitters.CompleteMeasFitter'>
+Optimizer: MySPSA
+-- gradient_support_level: 1
+-- bounds_support_level: 1
+-- initial_point_support_level: 3
+-- options: {'save_steps': 1, 'last_avg': 2}
+-- max_evals_grouped: 1
+-- maxiter: 8
+-- parameters: [0.20456665 0.1        0.602      0.101      0.        ]
+-- skip_calibration: False
+
+2021-03-14 23:55:05,602 - classifiers.quantum.qasvm - INFO - running VQAlgorithm
+2021-03-14 23:55:06,837 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 0: 5.0168728
+2021-03-14 23:55:06,842 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 0: 5.1713856
+2021-03-14 23:55:07,611 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 1: 4.5124334
+2021-03-14 23:55:07,613 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 1: 3.1269090
+2021-03-14 23:55:08,366 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 2: 0.2172336
+2021-03-14 23:55:08,373 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 2: 0.2734868
+2021-03-14 23:55:09,205 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 3: 0.4908408
+2021-03-14 23:55:09,210 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 3: 0.3373682
+2021-03-14 23:55:10,032 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 4: 0.2084123
+2021-03-14 23:55:10,036 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 4: 0.3493214
+2021-03-14 23:55:10,795 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 5: 0.7033608
+2021-03-14 23:55:10,803 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 5: 0.6236112
+2021-03-14 23:55:11,639 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 6: 0.7253824
+2021-03-14 23:55:11,643 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 6: 0.5732055
+2021-03-14 23:55:12,387 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 7: 0.6347032
+2021-03-14 23:55:12,393 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 7: 0.6828394
+2021-03-14 23:55:12,660 - classifiers.optimizer - DEBUG - Final objective function is: 0.5079711
+2021-03-14 23:55:12,668 - classifiers.quantum.qasvm - DEBUG - {'optimizer_evals': None, 'optimizer_time': 7.065303325653076, 'optimal_value': 0.5079711374424518, 'optimal_point': array([-4.59345442,  3.63227396, -3.26905323, -3.80011948]), 'optimal_parameters': {Parameter(θ[0]): -4.593454416920149, Parameter(θ[1]): 3.6322739596212212, Parameter(θ[2]): -3.269053229504027, Parameter(θ[3]): -3.8001194762665538}}
+2021-03-14 23:57:40,979 - classifiers.quantum.qasvm - DEBUG - Dual_QASVM (C=None, k=0.1)
+Circuit Class: Bloch_sphere_QASVM_circuit
+QuantumInstance: 
+Qiskit Terra version: 0.16.1
+Backend: 'qasm_simulator(ibmq_sydney) (None)', with following setting:
+{'basis_gates': ['cx', 'id', 'sx', 'u3', 'x'], 'coupling_map': [[0, 1], [1, 0], [1, 2], [1, 4], [2, 1], [2, 3], [3, 2], [3, 5], [4, 1], [4, 7], [5, 3], [5, 8], [6, 7], [7, 4], [7, 6], [7, 10], [8, 5], [8, 9], [8, 11], [9, 8], [10, 7], [10, 12], [11, 8], [11, 14], [12, 10], [12, 13], [12, 15], [13, 12], [13, 14], [14, 11], [14, 13], [14, 16], [15, 12], [15, 18], [16, 14], [16, 19], [17, 18], [18, 15], [18, 17], [18, 21], [19, 16], [19, 20], [19, 22], [20, 19], [21, 18], [21, 23], [22, 19], [22, 25], [23, 21], [23, 24], [24, 23], [24, 25], [25, 22], [25, 24], [25, 26], [26, 25]]}
+{'initial_layout': {Qubit(QuantumRegister(1, 'a'), 0): 3, Qubit(QuantumRegister(2, 'i'), 0): 0, Qubit(QuantumRegister(2, 'i'), 1): 4, Qubit(QuantumRegister(1, 'xi'), 0): 2, Qubit(QuantumRegister(1, 'yi'), 0): 1, Qubit(QuantumRegister(2, 'j'), 0): 9, Qubit(QuantumRegister(2, 'j'), 1): 11, Qubit(QuantumRegister(1, 'xj'), 0): 5, Qubit(QuantumRegister(1, 'yj'), 0): 8}, 'seed_transpiler': 0, 'optimization_level': 3}
+RunConfig(max_credits=10, shots=8192)
+{'timeout': None}
+{}
+{}
+Measurement mitigation: <class 'qiskit.ignis.mitigation.measurement.fitters.CompleteMeasFitter'>
+Optimizer: MySPSA
+-- gradient_support_level: 1
+-- bounds_support_level: 1
+-- initial_point_support_level: 3
+-- options: {'save_steps': 1, 'last_avg': 2}
+-- max_evals_grouped: 1
+-- maxiter: 8
+-- parameters: [0.36243732 0.1        0.602      0.101      0.        ]
+-- skip_calibration: False
+
+2021-03-14 23:57:40,981 - classifiers.quantum.qasvm - INFO - running VQAlgorithm
+2021-03-14 23:57:42,204 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 0: 4.1582772
+2021-03-14 23:57:42,206 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 0: 3.2759814
+2021-03-14 23:57:42,935 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 1: 2.4896411
+2021-03-14 23:57:42,937 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 1: 4.2205392
+2021-03-14 23:57:43,729 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 2: 5.5781800
+2021-03-14 23:57:43,733 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 2: 5.8823580
+2021-03-14 23:57:44,452 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 3: 2.8350299
+2021-03-14 23:57:44,457 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 3: 3.7459236
+2021-03-14 23:57:45,240 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 4: 5.4938173
+2021-03-14 23:57:45,246 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 4: 5.4749689
+2021-03-14 23:57:46,046 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 5: 5.3760514
+2021-03-14 23:57:46,047 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 5: 5.7129989
+2021-03-14 23:57:46,771 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 6: 5.3402857
+2021-03-14 23:57:46,772 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 6: 5.5406230
+2021-03-14 23:57:47,545 - classifiers.optimizer - DEBUG - Objective function at theta+ for step # 7: 1.6301250
+2021-03-14 23:57:47,548 - classifiers.optimizer - DEBUG - Objective function at theta- for step # 7: 2.1037252
+2021-03-14 23:57:47,804 - classifiers.optimizer - DEBUG - Final objective function is: 0.9402877
+2021-03-14 23:57:47,812 - classifiers.quantum.qasvm - DEBUG - {'optimizer_evals': None, 'optimizer_time': 6.82961106300354, 'optimal_value': 0.9402877194863023, 'optimal_point': array([13.40582383,  7.71457858, 12.75574771, 16.05906338]), 'optimal_parameters': {Parameter(θ[0]): 13.405823826336668, Parameter(θ[1]): 7.714578581441165, Parameter(θ[2]): 12.755747713896167, Parameter(θ[3]): 16.059063378789805}}
