@@ -15,8 +15,8 @@ class Plot_Log_From_SPSA(object):
             q = pathlib.Path.home()/ 'QUIC-Projects' / 'exp_logs'
             logfile = max(q.glob('*.log'), key=lambda q: q.stat().st_ctime)
         self.logfile = logfile
-        self.theta_plus_re = re.compile('Objective function at theta[+] for step # \d+: \d+[.]\d+')
-        self.theta_minus_re = re.compile('Objective function at theta[-] for step # \d+: \d+[.]\d+')
+        self.theta_plus_re = re.compile('Objective function at theta[+] for step # \d+: -?\d+[.]\d+')
+        self.theta_minus_re = re.compile('Objective function at theta[-] for step # \d+: -?\d+[.]\d+')
         self.theta_plus_dict = dict()
         self.theta_minus_dict = dict()
         with open(logfile, 'r') as f:
