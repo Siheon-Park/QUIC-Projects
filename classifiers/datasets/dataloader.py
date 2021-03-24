@@ -1,4 +1,6 @@
+from typing import Union
 import numpy as np
+from numpy.lib.shape_base import _replace_zero_by_x_arrays
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
@@ -164,3 +166,32 @@ class Only2DataOnBlochSphereLoader(DataLoader):
 
     def __call__(self):
         return np.array([self.x1, self.x2]), np.array([0, 1])
+
+class ExampleDataLoader(DataLoader):
+    def __init__(self, X:np.ndarray, y:np.ndarray) -> None:
+        super().__init__()
+        self.X = X
+        self.y = y
+
+    def __call__(self):
+        return self.X, self.y
+
+class Example_4x2(ExampleDataLoader):
+    def __init__(self, balanced:Union[bool, str]) -> None:
+        if isinstance(balanced, str):
+            balanced = True if balanced=='balanced' else False
+        if balanced:
+            X =np.array([[ 0.72294659, -1.00386432],
+                         [-0.60553577,  2.29966755],
+                         [-2.50699176, -1.03101898],
+                         [ 2.63961761,  2.21632328]])
+            y = np.array([0,0,1,1])
+        else:
+            X = np.array([[ 1.52122222, -2.00528202],
+                          [ 1.7253286 ,  1.30938536],
+                          [ 1.61226076,  1.12382948],
+                          [ 1.80995737,  1.21355977]])
+            y = np.array([0, 1, 1, 1])
+        self.__init__(X, y)
+
+
