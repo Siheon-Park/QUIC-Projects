@@ -192,6 +192,6 @@ class Example_4x2(ExampleDataLoader):
                           [ 1.61226076,  1.12382948],
                           [ 1.80995737,  1.21355977]])
             y = np.array([0, 1, 1, 1])
-        self.__init__(X, y)
+        super().__init__(X, y)
 
 
