@@ -92,11 +92,9 @@ class Bloch_sphere_QASVM_circuit(QASVM_circuit):
             logger.warning("ignoring {:} for {:} is not using it.".format('feature_map', self.__class__.__name__))
         if feature_map_params is not None:
             logger.debug("ignoring {:} for {:} is not using it.".format('feature_map_params', self.__class__.__name__))
-        temp_feature_map_params = ParameterVector('X', 2)
         temp_feature_map = QuantumCircuit(1)
-        temp_feature_map.u3(temp_feature_map_params[0], temp_feature_map_params[1], 0, 0)
-        feature_map_param_dict = {p:v for p, v in zip(temp_feature_map_params, testdata)}
-        self.compose(temp_feature_map.assign_parameters(feature_map_param_dict), qubits=list(self._reg_dict[reg]), inplace=True)
+        temp_feature_map.u3(testdata[0], testdata[1], 0, 0)
+        self.compose(temp_feature_map, qubits=list(self._reg_dict[reg]), inplace=True)
 
 class Bloch_uniform_QASVM_circuit(Bloch_sphere_QASVM_circuit):
     """ not using var_form, feature_map, feature_map_params """
