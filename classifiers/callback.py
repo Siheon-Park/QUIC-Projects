@@ -1,18 +1,12 @@
-from typing import Optional, List, Callable
-import logging
+from typing import Callable
 
 import numpy as np
 from matplotlib import pyplot as plt
-
-from qiskit.aqua import aqua_globals
-from qiskit.aqua.components.optimizers.spsa import SPSA
 
 from torch.utils.tensorboard import SummaryWriter
 
 from . import Classifier
 
-from tqdm.notebook import tqdm
-# TODO: how to properly save params
 class CallBack(object):
     def __init__(self, writer:SummaryWriter=None) -> None:
         super().__init__()

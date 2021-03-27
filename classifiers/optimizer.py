@@ -1,9 +1,6 @@
 from typing import Optional, List, Callable
 import logging
-
 import numpy as np
-from matplotlib import pyplot as plt
-
 from qiskit.aqua import aqua_globals
 from qiskit.aqua.components.optimizers.spsa import SPSA
 
