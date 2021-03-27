@@ -23,7 +23,7 @@ class StocasticOptimizer(ABC):
         """ evolve optimizer """
         raise NotImplementedError
 
-class SpsaOptimizer(StocasticOptimizer):
+class SPSA(StocasticOptimizer):
     def __init__(self, objective:Callable, params:ParameterVector,
                  maxiter:int=1000,
                  c0: float = 2 * np.pi * 0.1,
