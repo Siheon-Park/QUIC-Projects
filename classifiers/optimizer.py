@@ -25,7 +25,6 @@ class StocasticOptimizer(ABC):
 
 class SPSA(StocasticOptimizer):
     def __init__(self, objective:Callable, params:ParameterVector,
-                 maxiter:int=1000,
                  c0: float = 2 * np.pi * 0.1,
                  c1: float = 0.1,
                  c2: float = 0.602,
@@ -34,9 +33,8 @@ class SPSA(StocasticOptimizer):
                  initial_point: np.ndarray = None) -> None:
         hyperparams = dict(c0=c0, c1=c1, c2=c2, c3=c3, c4=c4)
         if initial_point is None:
-            initial_point = np.pi*(2*np.random.rand(len(self.params))-1)
+            initial_point = np.pi*(2*np.random.rand(len(params))-1)
         super().__init__(objective, params, hyperparams, initial_point)
-        self.maxiter=maxiter
         self.k=0
 
     def step(self):
@@ -63,7 +61,7 @@ class SPSA(StocasticOptimizer):
             self.params[k] = theta[i]
         self.k+=1
 
-    def calibrate(self):
+    def calibrate(self, maxiter):
         """Calibrates and stores the SPSA parameters back.
 
         SPSA parameters are c0 through c5 stored in parameters array
@@ -74,7 +72,7 @@ class SPSA(StocasticOptimizer):
         c1 is initial_c and is first perturbation of initial_theta.
         """
         initial_theta = np.array(list(self.params.values()))
-        num_steps_calibration = min(25, max(1, self.maxiter // 5))
+        num_steps_calibration = min(25, max(1, maxiter // 5))
         target_update = self.hyperparams['c0']
         initial_c = self.hyperparams['c1']
         delta_obj = 0
