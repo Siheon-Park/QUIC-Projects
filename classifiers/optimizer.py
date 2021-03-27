@@ -37,9 +37,11 @@ class SPSA(StocasticOptimizer):
         super().__init__(objective, params, hyperparams, initial_point)
         self.k=0
 
-    def step(self):
+    def step(self, k:int=None):
         """ evolve SPSA """
         theta = np.array(list(self.params.values()))
+        if k is not None:
+            self.k = k
         # SPSA Parameters
         a_spsa = float(self.hyperparams['c0']) / np.power(self.k + 1 + self.hyperparams['c4'],
                                                         self.hyperparams['c2'])
@@ -61,7 +63,7 @@ class SPSA(StocasticOptimizer):
             self.params[k] = theta[i]
         self.k+=1
 
-    def calibrate(self, maxiter):
+    def calibrate(self, maxiter:int=1000):
         """Calibrates and stores the SPSA parameters back.
 
         SPSA parameters are c0 through c5 stored in parameters array
