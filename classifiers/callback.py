@@ -4,23 +4,27 @@ import logging
 import numpy as np
 from matplotlib import pyplot as plt
 
-from qiskit.aqua import aqua_globals
-from qiskit.aqua.components.optimizers.spsa import SPSA
-
 from torch.utils.tensorboard import SummaryWriter
 
 from . import Classifier
 
-from tqdm.notebook import tqdm
-# TODO: how to properly save params
 class CallBack(object):
-    def __init__(self, writer:SummaryWriter=None) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.writer = writer
 
 CallBack.save = Classifier.save
 
-class SimpleStorage(CallBack):
+class BaseStorage(CallBack):
+    def __init__(self, writer: SummaryWriter) -> None:
+        super().__init__()
+        self.writer=writer
+
+    def clear(self):
+        for attr, value in self.__dict__.items():
+            if isinstance(value, dict):
+                self.__setattr__(attr, {})
+
+class SimpleStorage(BaseStorage):
     """ saves simply costs and params"""
     def __init__(self, writer:SummaryWriter=None) -> None:
         super().__init__(writer)
