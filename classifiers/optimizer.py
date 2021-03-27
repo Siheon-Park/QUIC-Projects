@@ -1,13 +1,13 @@
-import warnings
 from typing import Optional, List, Callable
 import logging
 
 import numpy as np
+from matplotlib import pyplot as plt
 
 from qiskit.aqua import aqua_globals
 from qiskit.aqua.components.optimizers.spsa import SPSA
 
-from . import Classifier
+from tqdm.notebook import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +112,7 @@ class MySPSA(SPSA):
 
         theta = initial_theta
         theta_best = np.zeros(initial_theta.shape)
-        for k in range(maxiter):
+        for k in tqdm(range(maxiter)):
             # SPSA Parameters
             a_spsa = float(self._parameters[0]) / np.power(k + 1 + self._parameters[4],
                                                            self._parameters[2])
@@ -145,43 +145,3 @@ class MySPSA(SPSA):
         logger.debug('Final objective function is: %.7f', cost_final)
 
         return [cost_final, theta_best, None, None, None, None]
-
-class CallBack(object):
-    def __init__(self) -> None:
-        super().__init__()
-
-CallBack.save = Classifier.save
-
-class SimpleStorage(CallBack):
-    """ saves simply costs and params"""
-    def __init__(self) -> None:
-        super().__init__()
-        self.params = {}
-        self.costs = {}
-
-    def __call__(self, *args, **kwargs):
-        k, cost, theta = args[:3]
-        if isinstance(cost, Callable):
-            cost = cost(theta)
-            logger.debug('Objective function at theta0 for step # %s: %1.7f', k, cost)
-        self.params[k] = theta
-        self.costs[k] = cost
-
-class SimplePMStorage(SimpleStorage):
-    """ saves simply costs and params"""
-    def __init__(self) -> None:
-        super().__init__()
-        self.params_pm = {}
-        self.costs_pm = {}
-
-    def __call__(self, *args, **kwargs):
-        k, cost, theta, cost_plus, cost_minus, theta_plus, theta_minus = args[:7]
-        super().__call__(k, cost, theta)
-        if isinstance(cost_plus, Callable):
-            cost_plus = cost_plus(theta_plus)
-            logger.debug('Objective function at theta+ for step # %s: %1.7f', k, cost_plus)
-        if isinstance(cost_minus, Callable):
-            cost_minus = cost_minus(theta_minus)
-            logger.debug('Objective function at theta- for step # %s: %1.7f', k, cost_minus)
-        self.params_pm[k] = [theta_minus, theta_plus]
-        self.costs_pm[k] = [cost_minus, cost_plus]
