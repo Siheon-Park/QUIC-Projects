@@ -1,3 +1,8 @@
+from .. import Classifier
+
+class ConvexClassifier(Classifier):
+    pass
+
 class ConvexError(BaseException):
     def __init__(self, *message: object) -> None:
         self.message = ' '.join(message)
