@@ -102,8 +102,8 @@ class Qasvm_Mapping_4x2(object):
                         Qubit(QuantumRegister(1, 'xj'), 0),
                         Qubit(QuantumRegister(1, 'yj'), 0)]
         if 'sydney' in self.backend_name:
-            self.updated_date = '2021/03/21 15:38'
-            prefered_mapping_order = [3, 0, 4, 2, 1, 9, 11, 5, 8]
+            self.updated_date = '2021/03/28 02:41'
+            prefered_mapping_order = [14, 5, 9, 11, 8, 20, 22, 16, 19]
         elif 'toronto' in self.backend_name:
             self.updated_date = '2021/03/21 15:38'
             prefered_mapping_order = [14, 5, 9, 11, 8, 20, 22, 16, 19]
