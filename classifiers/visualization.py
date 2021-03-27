@@ -4,7 +4,6 @@ import re
 import pathlib
 from itertools import product
 from typing import Union, Optional, Dict, List, Callable
-from .convex.svm import Classifier
 from .quantum.qasvm import QASVM
 from .utils import tsne
 
@@ -53,7 +52,7 @@ class Plot_Log_From_SPSA(object):
         plt.title(kwargs.get('title', 'SPSA optimization'))
 
 class Plot_SVM(object):
-    def __init__(self, cls:Union[Classifier, QASVM]) -> None:
+    def __init__(self, cls) -> None:
         super().__init__()
         self.cls = cls
 
@@ -137,4 +136,13 @@ class Plot_Data(object):
             ax.set_title('Data Distribution')
         ax.grid()
 
-    
+def compare_svm_and_qasvm(svm, qasvm, repeat_for_qasvm:int=10):
+    assert svm.num_data == qasvm.num_data
+    assert 'QASVM' in svm.mutation
+    plt.plot(svm.f(svm.data), label='sim')
+    res = np.array([qasvm.f(qasvm.data) for _ in range(repeat_for_qasvm)])
+    plt.errorbar(range(len(res.mean(axis=0))), res.mean(axis=0), yerr=2*res.std(axis=0), label='qasvm')
+    plt.xticks(range(svm.num_data), [f'Data {i}' for i in range(svm.num_data)])
+    plt.ylabel('f')
+    plt.legend()
+    plt.grid()
