@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 from itertools import product
+from numpy.lib.arraysetops import isin
 from qiskit.aqua.algorithms.vq_algorithm import VQResult
 from qiskit.circuit.parametervector import ParameterVector
 from qiskit.circuit import QuantumCircuit
@@ -285,13 +286,21 @@ class QASVM(QuantumClassifier):
         logger.debug(dict(self.result))
         return dict(self.result)
 
-    def set_result(self, opt_params:List[float], opt_val:float=None, num_optimizer_evals:int=0, eval_time:float=0):
+    def set_result(self, optimal_parameters:Union[np.ndarray, dict], opt_val:float=None, num_optimizer_evals:int=0, eval_time:float=0):
+        opt_params_mapping = None
+        if isinstance(optimal_parameters, dict):
+            opt_params_mapping = optimal_parameters
+            opt_params = np.array(list(optimal_parameters.values()))
+        else:
+            opt_params_mapping = dict(zip(self.optimization_params, optimal_parameters))
+            opt_params = optimal_parameters
+            
         result = VQResult()
         result.optimizer_evals = num_optimizer_evals
         result.optimizer_time = eval_time
         result.optimal_value = opt_val if opt_val is not None else self.cost_fn(opt_params)
         result.optimal_point = opt_params
-        result.optimal_parameters = dict(zip(self.optimization_params, opt_params))
+        result.optimal_parameters = opt_params_mapping
         self.result = result
         return self.result
 
