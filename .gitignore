@@ -9,6 +9,7 @@ __pycache__
 # saved data
 *.dill
 *.pkl
+*/runs/*
 
 # spyder projects
 .spyproject
