@@ -1,6 +1,8 @@
 import logging
 import numpy as np
 from itertools import product
+from numpy.lib.arraysetops import isin
+from qiskit.aqua.algorithms.vq_algorithm import VQResult
 from qiskit.circuit.parametervector import ParameterVector
 from qiskit.circuit import QuantumCircuit
 from qiskit.aqua import QuantumInstance
@@ -97,6 +99,10 @@ class QASVM(QuantumClassifier):
     @property
     def var_form_params(self):
         return self._var_form_params
+
+    @property
+    def optimization_params(self):
+        return self.var_form_params['0']
 
 # feature_map
     @property
@@ -272,13 +278,31 @@ class QASVM(QuantumClassifier):
         logger.info('running VQAlgorithm')
         self.result = self.run_optimizer(
             optimizer=self.optimizer, 
-            parameters=self.var_form_params['0'], 
+            parameters=self.optimization_params, 
             cost_fn=self.cost_fn, 
             initial_point=self.initial_point, 
             bounds= None if not hasattr(self.var_form, 'parameter_bounds') else self.var_form.parameter_bounds,
             gradient_fn=self.grad_fn)
         logger.debug(dict(self.result))
         return dict(self.result)
+
+    def set_result(self, optimal_parameters:Union[np.ndarray, dict], opt_val:float=None, num_optimizer_evals:int=0, eval_time:float=0):
+        opt_params_mapping = None
+        if isinstance(optimal_parameters, dict):
+            opt_params_mapping = optimal_parameters
+            opt_params = np.array(list(optimal_parameters.values()))
+        else:
+            opt_params_mapping = dict(zip(self.optimization_params, optimal_parameters))
+            opt_params = optimal_parameters
+            
+        result = VQResult()
+        result.optimizer_evals = num_optimizer_evals
+        result.optimizer_time = eval_time
+        result.optimal_value = opt_val if opt_val is not None else self.cost_fn(opt_params)
+        result.optimal_point = opt_params
+        result.optimal_parameters = opt_params_mapping
+        self.result = result
+        return self.result
 
 # ------------------------------------------------------ methods for after running ------------------------------------------------------ #
     def get_optimal_cost(self):
@@ -328,8 +352,8 @@ class QASVM(QuantumClassifier):
         """ constructor of second-order-circuit where var_form parameters are 'theta_i', 'theta_j'. No feature_map parameters"""
         qc = self.circuit_class(self.num_data, self.dim_data, ord=2)
         if self.var_form is not None:
-            qc.add_var_form(self.var_form.assign_parameters(dict(zip(self.var_form_params['0'], self.var_form_params['i']))), reg='i')
-            qc.add_var_form(self.var_form.assign_parameters(dict(zip(self.var_form_params['0'], self.var_form_params['j']))), reg='j')
+            qc.add_var_form(self.var_form.assign_parameters(dict(zip(self.optimization_params, self.var_form_params['i']))), reg='i')
+            qc.add_var_form(self.var_form.assign_parameters(dict(zip(self.optimization_params, self.var_form_params['j']))), reg='j')
         else:
             qc.add_var_form(self.var_form, reg='i')
             qc.add_var_form(self.var_form, reg='j')
@@ -370,7 +394,7 @@ class QASVM(QuantumClassifier):
         if isinstance(theta, dict):
             param_dict = theta
         else:
-            param_dict = dict(zip(self.var_form_params['0'], theta))
+            param_dict = dict(zip(self.optimization_params, theta))
         param_dict_list = [dict(zip(self.feature_map_params, datum)) for datum in data]
         [data_dict.update(param_dict) for data_dict in param_dict_list]
         qc_list = list(map(self.first_order_circuit.assign_parameters, param_dict_list))
