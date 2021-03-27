@@ -2,17 +2,18 @@ import numpy as np
 import cvxopt
 from matplotlib import pyplot as plt
 from sklearn.metrics import accuracy_score
+from itertools import product, starmap
 import logging
 from ._cvxopt_helpers_ import _Matrix_Helper
-from . import ConvexError
-from .. import process_info_from_alpha, Classifier
+from . import ConvexClassifier, ConvexError
+from .. import process_info_from_alpha
 from ..kernel import Kernel
 
 _EPS = 1e-5
 
 logger = logging.getLogger(__name__)
         
-class BinarySVM(Classifier):
+class BinarySVM(ConvexClassifier):
     def __init__(self, kernel:Kernel, C:float=None, mutation:str='SVM', **kwargs)->None:
         self.kernel = kernel
         self.C = C
@@ -25,6 +26,7 @@ class BinarySVM(Classifier):
         self.status=None
         self.iterations=None
         self.alpha = None
+        self.result = None
 
     def f(self, test:np.ndarray):
         if len(test.shape)==1:
@@ -47,7 +49,7 @@ class BinarySVM(Classifier):
         else:
             self._fit_cvxopt()
         self._fit_postprocessing()
-        logger.debug(repr(self))
+        logger.debug(self.result)
 
     def __repr__(self) -> str:
         str_list=[]
@@ -56,6 +58,7 @@ class BinarySVM(Classifier):
         str_list.append(f'HyperParameter: {self.C}')
         str_list.append(f'Optimization Status: {self.status}')
         str_list.append(f'Iterations: {self.iterations}')
+        str_list.append(f'alpha: {self.alpha}')
         str_list.append('\n')
         return '\n\t'.join(str_list)
 
@@ -97,12 +100,14 @@ class BinarySVM(Classifier):
         self.alpha = np.array(sol['x']).flatten()
         if 'primal' in self.mutation:
             self.alpha = self.alpha[:self.num_data]
+        self.result = sol
             
     def _fit_uniform(self):
         logger.info('CVXOPT fitting skipped for being uniform svm')
         self.status = 'uniform'
         self.iterations = 0
         self.alpha = np.ones(self.num_data)/self.num_data
+        self.result = {'x': self.alpha, 'status':self.status, 'iterations':self.iterations}
 
     def _fit_postprocessing(self):
         if 'REDUCED' not in self.mutation:
@@ -113,7 +118,7 @@ class BinarySVM(Classifier):
             b = 0
             for ind in _temp:
                 b += self.polary[ind] - sum(self.alpha*self.polary*np.array([self.kernel(self.data[ind], x) for x in self.data]))
-            if b is not 0:
+            if b != 0:
                 self.b = b/len(_temp)
             else:
                 self.b = b
@@ -123,4 +128,24 @@ class BinarySVM(Classifier):
 
         self.support_, self.support_vectors_, self.n_support_ = process_info_from_alpha(self.alpha, self.data)
 
+    @property
+    def dual_objective_value(self):
+        if self.mutation=='REDUCED_QASVM':
+            K  = np.array(list(starmap(self.kernel, product(self.data, repeat=2)))).reshape(self.num_data,self.num_data) + 1/self.k
+            A = (self.alpha*self.polary).reshape(-1, 1)
+            return float(A.T @ K @ A)
+        elif self.mutation=='QASVM':
+            K  = np.array(list(starmap(self.kernel, product(self.data, repeat=2)))).reshape(self.num_data,self.num_data)
+            A = (self.alpha*self.polary).reshape(-1, 1)
+            return float(A.T @ K @ A)  
+        elif self.mutation=='REDUCED_SVM':
+            K  = np.array(list(starmap(self.kernel, product(self.data, repeat=2)))).reshape(self.num_data,self.num_data) + 1/self.k
+            A = (self.alpha*self.polary).reshape(-1, 1)
+            return 0.5*float(A.T @ K @ A) - np.sum(self.alpha)
+        elif self.mutation=='SVM':
+            K  = np.array(list(starmap(self.kernel, product(self.data, repeat=2)))).reshape(self.num_data,self.num_data)
+            A = (self.alpha*self.polary).reshape(-1, 1)
+            return 0.5*float(A.T @ K @ A) - np.sum(self.alpha)
+        else:
+            return None
 
