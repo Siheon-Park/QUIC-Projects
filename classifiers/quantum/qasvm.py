@@ -70,8 +70,8 @@ class QASVM(QuantumClassifier):
         self._mode = None # self.naive... self.transpiled... should be defined first
         self._alpha = None # everything should have been defined first
 
-        self.circuit_class = option #
         self.quantum_instance = quantum_instance #
+        self.circuit_class = option #
         self.var_form = var_form #
         self.initial_point = initial_point
         self.feature_map = feature_map #
@@ -86,7 +86,10 @@ class QASVM(QuantumClassifier):
     @initialized.setter
     def initialized(self, tf:Boolean):
         if self._initialized != tf:
-            self._basic_circuits_construction()
+            try:
+                self._basic_circuits_construction()
+            except Exception as e:
+                logger.warning("[{:}] has raised. Cannot construct circuits".format(repr(e)))
             self._initialized = True
 
 # self.circuit_class
@@ -106,7 +109,9 @@ class QASVM(QuantumClassifier):
             raise QuantumError('{:} is not subclass of {:}'.format(repr(option), QASVM_circuit.__name__))
         if self._circuit_class != option:
             self._circuit_class = option
-            self.initialized = False
+            self.var_form = self.var_form
+            self.feature_map = self.feature_map
+            # self.initialized = False
 
 # self.initial_point
     @property
@@ -134,9 +139,11 @@ class QASVM(QuantumClassifier):
                 _var_form_params: Dict[Parameter, float]
                 initial_point: 
         """
+        # TODO:
         if 'uniform' in self.circuit_class.__name__ and var_form is not None:
-            logger.warning("{:} ignores var_form. Setting it to None".format(self.circuit_class))
-            var_form = None
+            logger.warning("{:} ignores var_form. Set 'circuit_class' first to modify 'var_form'".format(self.circuit_class))
+            self.initialized = False
+            return None
         if hasattr(var_form, 'ordered_parameters'):
             _var_form_params = var_form.ordered_parameters
         elif isinstance(var_form, QuantumCircuit):
@@ -155,6 +162,7 @@ class QASVM(QuantumClassifier):
         self._var_form = var_form.assign_parameters(dict(zip(_var_form_params, self._var_form_params['0']))) if var_form is not None else var_form
         self._num_parameters = len(_var_form_params)
         self._parameters = dict(zip(self._var_form_params['0'], np.empty(self._num_parameters)))
+        self.initialized = False
 
     @property
     def parameters(self)->Dict[Parameter, float]:
@@ -179,9 +187,11 @@ class QASVM(QuantumClassifier):
 
     @feature_map.setter
     def feature_map(self, feature_map: Union[QuantumCircuit, None]):
+        # TODO:
         if 'Bloch' in self.circuit_class.__name__ and feature_map is not None:
-            logger.warning("{:} ignores feature_map. Setting it to None".format(self.circuit_class))
-            feature_map = None
+            logger.warning("{:} ignores feature_map. Set 'circuit_class' first to modify 'feature_map'".format(self.circuit_class))
+            self.initialized = False
+            return None
         """ Sets feature map """
         if hasattr(feature_map, 'ordered_paramters'):
             _feature_map_params = feature_map.ordered_parameters
@@ -194,6 +204,7 @@ class QASVM(QuantumClassifier):
             raise ValueError('Unsupported type "{:}" of feature_map'.format(type(feature_map)))
         self._feature_map_params = ParameterVector('X', len(_feature_map_params))
         self._feature_map = feature_map.assign_parameters(dict(zip(_feature_map_params, self._feature_map_params))) if feature_map is not None else feature_map
+        self.initialized = False
 
 # quantum_instance
     @property
@@ -460,3 +471,14 @@ class QASVM(QuantumClassifier):
         else:
             _string = 'QASVM mode is not set!! (C={:}, k={:})'.format(self.C, self.k)
         return _string
+
+class ParameterDict(dict):
+    def __add__(self, other):
+        if isinstance(other, np.ndarray):
+            for k,v in zip(self.keys(), other):
+                self[k]+=v
+    
+    def __sub__(self, other):
+        if isinstance(other, np.ndarray):
+            for k,v in zip(self.keys(), other):
+                self[k]-=v
