@@ -6,7 +6,6 @@ from qiskit.aqua.algorithms.vq_algorithm import VQResult
 from qiskit.circuit.parametervector import ParameterVector
 from qiskit.circuit import QuantumCircuit
 from qiskit.aqua import QuantumInstance
-from qiskit.aqua.components.optimizers import Optimizer
 from . import postprocess_Z_expectation
 from .quantum_circuits import QASVM_circuit, _CIRCUIT_CLASS_DICT
 from . import QuantumError
@@ -31,7 +30,6 @@ class QASVM(QuantumClassifier):
                 var_form: QuantumCircuit = None,
                 feature_map: QuantumCircuit = None,
                 quantum_instance: Optional[QuantumInstance] = None,
-                optimizer: Optimizer = None,
                 initial_point: Optional[np.ndarray] = None,
                 C:float = 1, k:float = 0.1, option:Union[str, Any]='Bloch_sphere', reps:int=1
                      ) -> None:
@@ -48,7 +46,6 @@ class QASVM(QuantumClassifier):
         self.var_form = var_form
         self.feature_map = feature_map
         self.quantum_instance = quantum_instance
-        self.optimizer = optimizer
         self.initial_point = initial_point
         self.C = C
         self.k = k
@@ -273,11 +270,11 @@ class QASVM(QuantumClassifier):
         ret = self._evaluate_first_order_circuit(params, input)
         return ret['ayk']+ret['ay']/self.k
 
-    def run(self) -> Dict:
+    def run(self, optimizer=None) -> Dict:
         logger.debug(repr(self))
         logger.info('running VQAlgorithm')
         self.result = self.run_optimizer(
-            optimizer=self.optimizer, 
+            optimizer=optimizer, 
             parameters=self.optimization_params, 
             cost_fn=self.cost_fn, 
             initial_point=self.initial_point, 
@@ -414,7 +411,6 @@ class QASVM(QuantumClassifier):
         string.append(str(self))
         string.append('Circuit Class: {:}'.format(self.circuit_class.__name__))
         string.append('QuantumInstance: {:}'.format(str(self.quantum_instance)))
-        string.append(str(self.optimizer.setting))
         return '\n'.join(string)
 
     def __str__(self) -> str:
