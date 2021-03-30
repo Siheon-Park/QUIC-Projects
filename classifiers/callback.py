@@ -87,3 +87,32 @@ class SimplePMStorage(SimpleStorage):
         plt.plot(steps[0:], cost[0:], label='t0', c='k', linewidth=0.5)
         plt.grid()
         plt.legend()
+
+class BaseStopping(CallBack):
+    pass
+
+class ParamsPlatoStopping(BaseStopping):
+    def __init__(self, patiance:int=30, length:int=30, tol:float=1e-2) -> None:
+        super().__init__()
+        self.params = {}
+        self.patiance = patiance
+        self.lenght = length
+        self.tol = tol
+        self._flag = -1
+
+    def __call__(self, param:np.ndarray, step:int):
+        self.params[step] = param
+        steps = np.array(list(self.params.keys()))
+        params = np.array(list(self.params.values()))
+        last = max(steps)
+        intr_params = params[steps>last-self.lenght]
+        mean = np.mean(intr_params, axis=0)
+        if np.all(np.abs(mean-param)<self.tol):
+            self._flag+=1
+        else:
+            self._flag = 0
+        if self._flag>=30:
+            return True
+        else:
+            return False
+        
