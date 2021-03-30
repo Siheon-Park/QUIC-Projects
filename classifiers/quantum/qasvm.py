@@ -1,11 +1,11 @@
+from inspect import Parameter
 import logging
 import numpy as np
 from itertools import product
-from numpy.lib.arraysetops import isin
-from qiskit.aqua.algorithms.vq_algorithm import VQResult
 from qiskit.circuit.parametervector import ParameterVector
 from qiskit.circuit import QuantumCircuit
 from qiskit.aqua import QuantumInstance
+from sympy.logic.boolalg import Boolean
 from . import postprocess_Z_expectation
 from .quantum_circuits import QASVM_circuit, _CIRCUIT_CLASS_DICT
 from . import QuantumError
@@ -21,19 +21,82 @@ class QASVM(QuantumClassifier):
         .. note::
             mutations: Dual, Primal, Class
 
-        For further details, please refer to https://
+        For further details, please refer to https://(future_arxiv adress)
+
+        Attributes
+        ----------
+            data : np.ndarray
+                data to encode
+            label : np.ndarray
+                labels to encode {0, 1}
+            quantum_instance : QuantumInstance
+                quantum instance provided by qiskit.aqua for first and second order circuits to run on
+            mode : Union[None, str]
+                QASVM operation mode that determines cost_fn, grad_fn, and f
+            cost_fn : Union[None, Callable]
+                objective function of QASVM. set mode properly if None
+
     """
 
     def __init__(self, 
                 data:np.ndarray,
                 label:np.ndarray,
-                var_form: QuantumCircuit = None,
-                feature_map: QuantumCircuit = None,
-                quantum_instance: Optional[QuantumInstance] = None,
-                initial_point: Optional[np.ndarray] = None,
-                C:float = 1, k:float = 0.1, option:Union[str, Any]='Bloch_sphere', reps:int=1
+                quantum_instance: QuantumInstance,
+                C:float = 1, k:float = 0.1, option:Union[str, Any]='Bloch_sphere',
+                var_form: Optional[QuantumCircuit] = None,
+                feature_map: Optional[QuantumCircuit] = None,
+                initial_point: Optional[np.ndarray] = None
                      ) -> None:
         super().__init__(data, label)
+
+        # initials
+        self.C = C
+        self.k = k
+        self._initialized = False
+        self._quantum_instance = None
+        self._circuit_class = None
+        self._var_form = None # set self._var_form_params, self.num_parameters, self.parameters
+        self._var_form_params = None # set from self.var_form
+        self._num_parameters = None # set from self.var_form
+        self._initial_point = None # self.num_parameters should be defined first
+        self._parameters = {} # set from self.var_form
+        self._feature_map = None # set self._feature_map_params
+        self._feature_map_params = None # sef from self.feature_map
+        self.naive_first_order_circuit = None # self.var_form, self.feature_map, self.had_transpiled should be defined first
+        self.naive_second_order_circuit = None # self.var_form, self.feature_map, self.had_transpiled should be defined first
+        self._had_transpiled = False # self.naive... , self.quantum_instance should be defined first
+        self.transpiled_first_order_circuit = None # self.var_form, self.feature_map, self.had_transpiled should be defined first
+        self.transpiled_second_order_circuit = None # self.var_form, self.feature_map, self.had_transpiled should be defined first
+        self._mode = None # self.naive... self.transpiled... should be defined first
+        self._alpha = None # everything should have been defined first
+
+        self.circuit_class = option #
+        self.quantum_instance = quantum_instance #
+        self.var_form = var_form #
+        self.initial_point = initial_point
+        self.feature_map = feature_map #
+        self.initialized = True
+        self.mode = None
+
+# self.initialized
+    @property
+    def initialized(self):
+        return self._initialized
+
+    @initialized.setter
+    def initialized(self, tf:Boolean):
+        if self._initialized != tf:
+            self._basic_circuits_construction()
+            self._initialized = True
+
+# self.circuit_class
+    @property
+    def circuit_class(self):
+        """ class to generate circuits. can be set from str ('QASVM', 'Bloch_sphere', 'uniform', 'Bloch_uniform', '_uc') """
+        return self._circuit_class
+
+    @circuit_class.setter
+    def circuit_class(self, option:Union[QASVM_circuit, str]):
         if isinstance(option, str):
             try:
                 option = _CIRCUIT_CLASS_DICT[option]
@@ -41,37 +104,36 @@ class QASVM(QuantumClassifier):
                 raise QuantumError('No Class in {:}.py that corresponds to {:}'.format(QASVM_circuit.__module__, option))
         if not issubclass(option, QASVM_circuit):
             raise QuantumError('{:} is not subclass of {:}'.format(repr(option), QASVM_circuit.__name__))
+        if self._circuit_class != option:
+            self._circuit_class = option
+            self.initialized = False
+
+# self.initial_point
+    @property
+    def initial_point(self):
+        """ starting point. Uniform[-pi, pi] if set to None """
+        return self._initial_point
+
+    @initial_point.setter
+    def initial_point(self, initial_point:Union[None, np.ndarray]):
+        if initial_point is None:
+            self._initial_point = 2*np.pi*(np.random.rand(self.num_parameters)-1/2)
         else:
-            self.circuit_class = option
-        self.var_form = var_form
-        self.feature_map = feature_map
-        self.quantum_instance = quantum_instance
-        self.initial_point = initial_point
-        self.C = C
-        self.k = k
-
-        self.naive_first_order_circuit = None
-        self.naive_second_order_circuit = None
-
-        self.transpiled_first_order_circuit = None
-        self.transpiled_second_order_circuit = None
-        self._had_transpiled = False
-        self.__fuck_you__vs_code = None
-
-        self.result = None
-        self._alpha = None
-
-
+            self._initial_point = initial_point
+        self.parameters = self.initial_point
 
 # var_form
     @property
-    def var_form(self) -> Optional[Union[QuantumCircuit]]:
-        """ Returns variational form """
+    def var_form(self) -> Union[QuantumCircuit, None]:
+        """ variational form (Ansatz) of QASVM. parameters will change accordingly """
         return self._var_form
 
     @var_form.setter
-    def var_form(self, var_form: Optional[Union[QuantumCircuit]]):
-        """ Sets variational form """
+    def var_form(self, var_form: Union[QuantumCircuit, None]):
+        """ Attributs:
+                _var_form_params: Dict[Parameter, float]
+                initial_point: 
+        """
         if 'uniform' in self.circuit_class.__name__ and var_form is not None:
             logger.warning("{:} ignores var_form. Setting it to None".format(self.circuit_class))
             var_form = None
@@ -91,24 +153,32 @@ class QASVM(QuantumClassifier):
             '0': ParameterVector('θ', len(_var_form_params))
             }
         self._var_form = var_form.assign_parameters(dict(zip(_var_form_params, self._var_form_params['0']))) if var_form is not None else var_form
-        self.num_parameters = len(_var_form_params)
+        self._num_parameters = len(_var_form_params)
+        self._parameters = dict(zip(self._var_form_params['0'], np.empty(self._num_parameters)))
 
     @property
-    def var_form_params(self):
-        return self._var_form_params
+    def parameters(self)->Dict[Parameter, float]:
+        """ optimization parameters of QASVM. parameter values can change but not keys """
+        return self._parameters
+
+    @parameters.setter
+    def parameters(self, params:np.ndarray):
+        for k, v in zip(self._parameters.keys(), params):
+            self._parameters[k] = v
 
     @property
-    def optimization_params(self):
-        return self.var_form_params['0']
+    def num_parameters(self)->int:
+        """ number of parameters to be optimized """
+        return self._num_parameters
 
 # feature_map
     @property
-    def feature_map(self) -> Optional[Union[QuantumCircuit]]:
-        """ Returns feature_map """
+    def feature_map(self) -> Union[QuantumCircuit, None]:
+        """ feature map (Data Encoding) of QASVM """
         return self._feature_map
 
     @feature_map.setter
-    def feature_map(self, feature_map: Optional[Union[QuantumCircuit]]):
+    def feature_map(self, feature_map: Union[QuantumCircuit, None]):
         if 'Bloch' in self.circuit_class.__name__ and feature_map is not None:
             logger.warning("{:} ignores feature_map. Setting it to None".format(self.circuit_class))
             feature_map = None
@@ -125,31 +195,24 @@ class QASVM(QuantumClassifier):
         self._feature_map_params = ParameterVector('X', len(_feature_map_params))
         self._feature_map = feature_map.assign_parameters(dict(zip(_feature_map_params, self._feature_map_params))) if feature_map is not None else feature_map
 
-    @property
-    def feature_map_params(self):
-        return self._feature_map_params
-
 # quantum_instance
     @property
-    def quantum_instance(self):
+    def quantum_instance(self)->QuantumInstance:
+        """ quantum instance provided by qiskit.aqua for first and second order circuits to run on """
         return self._quantum_instance
 
     @quantum_instance.setter
     def quantum_instance(self, quantum_instance:QuantumInstance):
-        # aqua bug
         self._quantum_instance = quantum_instance
-        if quantum_instance.is_simulator & ~quantum_instance.is_local:
-            try:
-                self.quantum_instance.qjob_config['wait']
-            except KeyError:
-                pass
-            else:
-                logger.warning("'QuantumInstance.qjob_config' has key 'wait'. It will be deleted.")
-                del self.quantum_instance.qjob_config['wait']
+        self.initialized = False
 
 # had_transpiled
     @property
     def had_transpiled(self):
+        """ 
+            Boolean variable to determine if the circuits had been transpiled.
+            first and second order circuits will change accordingly
+        """
         return self._had_transpiled
 
     @had_transpiled.setter
@@ -168,6 +231,7 @@ class QASVM(QuantumClassifier):
 #self.first_order_circuit
     @property
     def first_order_circuit(self):
+        """ first order circuit of QASVM (naive/transpiled)"""
         if self.had_transpiled:
             return self.transpiled_first_order_circuit
         else:
@@ -176,62 +240,77 @@ class QASVM(QuantumClassifier):
 #self.second_order_circuit
     @property
     def second_order_circuit(self):
+        """ second order circuit of QASVM (naive/transpiled)"""
         if self.had_transpiled:
             return self.transpiled_second_order_circuit
         else:
             return self.naive_second_order_circuit
 
-# self.mutation
+# self.mode
     @property
-    def mutation(self):
-        return self.__fuck_you__vs_code
+    def mode(self):
+        """ 
+            str: operation mode of QASVM. 
+            there are three options; ''Dual'', ''Primal'', 'Classifier'. 
+            other options will reset mode to None.
+        """
+        return self._mode
 
-    @mutation.setter
-    def mutation(self, mutation:str):
-        if mutation=='Dual':
-            self.cost_fn = self.cost_fn_second_order
-            self.grad_fn = self.grad_fn_second_order
-            self.__fuck_you__vs_code = 'Dual'
-        elif mutation=='Primal':
-            self.cost_fn = lambda x:self.cost_fn_second_order(x)/2+self.cost_fn_first_order(x)
-            self.grad_fn = None
-            self.__fuck_you__vs_code = 'Primal'
-        elif mutation=='Classifier':
-            self.cost_fn = self.cost_fn_first_order
-            self.grad_fn = None
-            self.__fuck_you__vs_code = 'Classifier'
+    @mode.setter
+    def mode(self, mode:str):
+        if mode not in ['Dual', 'Primal', 'Classifier']:
+            self._mode = None
         else:
-            self.cost_fn = None
-            self.grad_fn = None
-            self.__fuck_you__vs_code = None
+            self._mode = mode
 
+    @property
+    def cost_fn(self):
+        """ cost function of QASVM according to mode """
+        if self.mode=='Dual':
+            return self._cost_fn_second_order
+        elif self.mode=='Primal':
+            return lambda x:self._cost_fn_second_order(x)/2+self._cost_fn_first_order(x)
+        elif self.mode=='Classifier':
+            return self._cost_fn_first_order
+        else:
+            return None
+
+    @property
+    def grad_fn(self):
+        """ gradient function of QASVM according to mode """
+        if self.mode=='Dual':
+            return self._grad_fn_second_order
+        elif self.mode=='Primal':
+            return None
+        elif self.mode=='Classifier':
+            return None
+        else:
+            return None
+            
     @property
     def dual(self):
-        """ dual mod """
-        self.basic_circuits_construction()
-        self.mutation = 'Dual'
+        """ set QASVM to dual mode and return self """
+        self.mode = 'Dual'
         return self
 
     @property
     def primal(self):
-        """ primal mutation """
-        self.basic_circuits_construction()
-        self.mutation = 'Primal'
+        """  set QASVM to primal mode and return self """
+        self.mode = 'Primal'
         return self
 
     @property
     def classifier(self):
-        self.basic_circuits_construction()
-        self.mutation = 'Classifier'
+        """ set QASVM to classifier mode and return self """
+        self.mode = 'Classifier'
         return self
 
 # self.alpha
     @property
     def alpha(self):
-        if self.result is None:
-            return self._alpha
+        """ corresponding weights analogos to that of SVM. Set it to None and try again for another circuit run """ 
         if self._alpha is None:
-            qc = self.var_form.assign_parameters(self.optimal_params)
+            qc = self.var_form.assign_parameters(self.parameters)
             qc.measure_all()
             prob_dict = self.quantum_instance.execute([qc], self.had_transpiled).get_counts()
             return np.array([prob_dict.get(''.join(map(str, bin)), 0) for bin in product((0, 1), repeat=qc.num_qubits)])/sum(prob_dict.values())
@@ -243,19 +322,19 @@ class QASVM(QuantumClassifier):
         self._alpha = a   
 
 # methods
-    def cost_fn_second_order(self, param:Union[List[float], np.ndarray]):
+    def _cost_fn_second_order(self, param:Union[List[float], np.ndarray, Dict[Parameter, float]]):
         ret = self._evaluate_second_order_circuit(param, param)
         reg = ret['aayyk']+ret['aayy']/self.k
         return reg
 
-    def cost_fn_first_order(self, param:Union[List[float], np.ndarray]):
+    def _cost_fn_first_order(self, param:Union[List[float], np.ndarray, Dict[Parameter, float]]):
         ret = self._evaluate_first_order_circuit(param, self.data)
         t = ret['ayk']+ret['ay']/self.k
         y = np.where(self.label>0, 1, -1)
         clf = np.sum(np.maximum(np.zeros_like(t), 1/self.C-y*t))
         return clf
 
-    def grad_fn_second_order(self, param:np.ndarray):
+    def _grad_fn_second_order(self, param:np.ndarray):
         shifts = np.pi/2*np.eye(len(param))
         gradients = []
         for shift in shifts:
@@ -266,54 +345,16 @@ class QASVM(QuantumClassifier):
             gradients.append(reg_plus-reg_minus)
         return np.array(gradients)
 
-    def classifying_function(self, params:Union[np.ndarray, List[float]], input:Union[np.ndarray, List[np.ndarray]]):
+    def classifying_function(self, params:Union[np.ndarray, List[float], Dict[Parameter, float]], input:Union[np.ndarray, List[np.ndarray]])->float:
+        """ f(theta=params, X=input) 
+            Args:
+                params: information on optimization parameters
+                input: information on test data
+            Returns:
+                classifying value
+        """
         ret = self._evaluate_first_order_circuit(params, input)
         return ret['ayk']+ret['ay']/self.k
-
-    def run(self, optimizer=None) -> Dict:
-        logger.debug(repr(self))
-        logger.info('running VQAlgorithm')
-        self.result = self.run_optimizer(
-            optimizer=optimizer, 
-            parameters=self.optimization_params, 
-            cost_fn=self.cost_fn, 
-            initial_point=self.initial_point, 
-            bounds= None if not hasattr(self.var_form, 'parameter_bounds') else self.var_form.parameter_bounds,
-            gradient_fn=self.grad_fn)
-        logger.debug(dict(self.result))
-        return dict(self.result)
-
-    def set_result(self, optimal_parameters:Union[np.ndarray, dict], opt_val:float=None, num_optimizer_evals:int=0, eval_time:float=0):
-        opt_params_mapping = None
-        if isinstance(optimal_parameters, dict):
-            opt_params_mapping = optimal_parameters
-            opt_params = np.array(list(optimal_parameters.values()))
-        else:
-            opt_params_mapping = dict(zip(self.optimization_params, optimal_parameters))
-            opt_params = optimal_parameters
-            
-        result = VQResult()
-        result.optimizer_evals = num_optimizer_evals
-        result.optimizer_time = eval_time
-        result.optimal_value = opt_val if opt_val is not None else self.cost_fn(opt_params)
-        result.optimal_point = opt_params
-        result.optimal_parameters = opt_params_mapping
-        self.result = result
-        return self.result
-
-# ------------------------------------------------------ methods for after running ------------------------------------------------------ #
-    def get_optimal_cost(self):
-        return self.result.optimal_value
-
-    def get_optimal_circuit(self):
-        return self.first_order_circuit.assign_parameters(self.result.optimal_parameters)
-
-    def get_optimal_vector(self):
-        return self.result.optimal_point
-
-    @property
-    def optimal_params(self):
-        return self.result.optimal_parameters
 
     def f(self, testdata:Union[np.ndarray, List[np.ndarray]]):
         """ calculate optimal classifying value
@@ -323,10 +364,10 @@ class QASVM(QuantumClassifier):
             Return:
                 f(np.ndarray): f(X)
         """
-        return self.classifying_function(self.optimal_params, testdata)
+        return self.classifying_function(self.parameters, testdata)
 
 # ------------------------------------------------------ methods circuit constructions & evaluation ------------------------------------------------------ #
-    def basic_circuits_construction(self):
+    def _basic_circuits_construction(self):
         """ setting first and second order circuits and transpile if needed. """
         self.naive_second_order_circuit = self._construct_second_order_circuit()
         self.naive_first_order_circuit = self._construct_firt_order_circuit()
@@ -339,8 +380,8 @@ class QASVM(QuantumClassifier):
         """ constructor of first-order-circuit where var_form parameters are 'theta', feature_map parameters are 'X'."""
         qc = self.circuit_class(self.num_data, self.dim_data, ord=1)
         qc.add_var_form(self.var_form)
-        qc.UD_encode(self.feature_map, self.feature_map_params, training_data=self.data, training_label=self.label, N=self.num_data)
-        qc.X_encode(self.feature_map, self.feature_map_params, testdata=self.feature_map_params)
+        qc.UD_encode(self.feature_map, self._feature_map_params, training_data=self.data, training_label=self.label, N=self.num_data)
+        qc.X_encode(self.feature_map, self._feature_map_params, testdata=self._feature_map_params)
         qc.SWAP_test()
         qc.Z_expectation_measurement()
         return qc
@@ -349,13 +390,13 @@ class QASVM(QuantumClassifier):
         """ constructor of second-order-circuit where var_form parameters are 'theta_i', 'theta_j'. No feature_map parameters"""
         qc = self.circuit_class(self.num_data, self.dim_data, ord=2)
         if self.var_form is not None:
-            qc.add_var_form(self.var_form.assign_parameters(dict(zip(self.optimization_params, self.var_form_params['i']))), reg='i')
-            qc.add_var_form(self.var_form.assign_parameters(dict(zip(self.optimization_params, self.var_form_params['j']))), reg='j')
+            qc.add_var_form(self.var_form.assign_parameters(dict(zip(self._var_form_params['0'], self._var_form_params['i']))), reg='i')
+            qc.add_var_form(self.var_form.assign_parameters(dict(zip(self._var_form_params['0'], self._var_form_params['j']))), reg='j')
         else:
             qc.add_var_form(self.var_form, reg='i')
             qc.add_var_form(self.var_form, reg='j')
-        qc.UD_encode(self.feature_map, self.feature_map_params, training_data=self.data, training_label=self.label, N=self.num_data, reg='i')
-        qc.UD_encode(self.feature_map, self.feature_map_params, training_data=self.data, training_label=self.label, N=self.num_data, reg='j')
+        qc.UD_encode(self.feature_map, self._feature_map_params, training_data=self.data, training_label=self.label, N=self.num_data, reg='i')
+        qc.UD_encode(self.feature_map, self._feature_map_params, training_data=self.data, training_label=self.label, N=self.num_data, reg='j')
         qc.SWAP_test()
         qc.Z_expectation_measurement()
         return qc
@@ -370,7 +411,7 @@ class QASVM(QuantumClassifier):
         if isinstance(param1, dict):
             param_dict = param1
         else:
-            param_dict = dict(zip(self.var_form_params['i'], param1))
+            param_dict = dict(zip(self._var_form_params['i'], param1))
         if isinstance(param2, dict):
             param_dict.update(param2)
         else:
@@ -381,7 +422,7 @@ class QASVM(QuantumClassifier):
         eval_dict['aayy'] = postprocess_Z_expectation(3, _dict, 1, 0)
         return eval_dict
 
-    def _evaluate_first_order_circuit(self, theta:Union[np.ndarray, List[float], dict], data:Union[np.ndarray, List[np.ndarray]]) -> Dict[str, float]:
+    def _evaluate_first_order_circuit(self, theta:Union[np.ndarray, List[float], Dict[Parameter, float]], data:Union[np.ndarray, List[np.ndarray]]) -> Dict[str, float]:
         """ evaluating first-order-circuit.
             Args:
                 theta: var_form parameters 'theta'
@@ -391,8 +432,8 @@ class QASVM(QuantumClassifier):
         if isinstance(theta, dict):
             param_dict = theta
         else:
-            param_dict = dict(zip(self.optimization_params, theta))
-        param_dict_list = [dict(zip(self.feature_map_params, datum)) for datum in data]
+            param_dict = dict(zip(self._var_form_params['0'], theta))
+        param_dict_list = [dict(zip(self._feature_map_params, datum)) for datum in data]
         [data_dict.update(param_dict) for data_dict in param_dict_list]
         qc_list = list(map(self.first_order_circuit.assign_parameters, param_dict_list))
         _dict = self.quantum_instance.execute(qc_list, self.had_transpiled).get_counts()
@@ -414,8 +455,8 @@ class QASVM(QuantumClassifier):
         return '\n'.join(string)
 
     def __str__(self) -> str:
-        if self.mutation is not None:
-            _string = '{:}_QASVM (C={:}, k={:})'.format(self.mutation, self.C, self.k)
+        if self.mode is not None:
+            _string = '{:}_QASVM (C={:}, k={:})'.format(self.mode, self.C, self.k)
         else:
-            _string = 'QASVM mutation is not set!! (C={:}, k={:})'.format(self.C, self.k)
+            _string = 'QASVM mode is not set!! (C={:}, k={:})'.format(self.C, self.k)
         return _string
