@@ -214,6 +214,13 @@ class QASVM(QuantumClassifier):
     @quantum_instance.setter
     def quantum_instance(self, quantum_instance:QuantumInstance):
         self._quantum_instance = quantum_instance
+        # aqua bug
+        try:
+            self._quantum_instance.qjob_config['wait']
+        except KeyError as e:
+            logger.warning('qiskit aqua bug, ', e)
+            logger.warning("Deleting 'wait'...")
+            del self._quantum_instance.qjob_config['wait']
         self.initialized = False
 
 # had_transpiled
