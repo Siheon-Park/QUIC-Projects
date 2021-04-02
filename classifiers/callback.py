@@ -99,7 +99,9 @@ class BaseStopping(CallBack):
     pass
 
 class ParamsStopping(BaseStopping):
-    def __init__(self, patiance:int=30, last_avg:int=30, tol:float=1e-2) -> None:
+    def __init__(self, last_avg:int=30, patiance:int=None, tol:float=1e-2) -> None:
+        if patiance is None:
+            patiance = last_avg
         assert patiance>=0
         assert last_avg>=2
         assert tol>0
@@ -109,7 +111,7 @@ class ParamsStopping(BaseStopping):
         self.last_avg = last_avg
         self.tol = tol
         self._FLAG = -1
-        self.best_params = ParameterDict()
+        self.best_params = None
 
     def __call__(self, params:Union[np.ndarray, dict], step:int):
         if isinstance(params, dict):
@@ -120,9 +122,10 @@ class ParamsStopping(BaseStopping):
             self.watch_list.append(DataFrame(_temp_dict, index=[step%self.last_avg]), ignore_index=False)
         else:
             self.watch_list.loc[[step%self.last_avg]] = DataFrame(_temp_dict, index=[step%self.last_avg])
+        self.best_params = self.watch_list.mean(axis=0).to_numpy()
         if len(self.watch_list)>=self.last_avg:
             if (self.watch_list.std(axis=0)<self.tol).all():
                 self._FLAG+=1
                 if self._FLAG==self.patiance:
-                    self.best_params = self.watch_list.mean(axis=0).to_numpy()
-        return self.best_params
+                    return True
+        return False
