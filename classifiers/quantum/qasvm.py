@@ -217,8 +217,10 @@ class QASVM(QuantumClassifier):
         # aqua bug
         try:
             self._quantum_instance.qjob_config['wait']
-        except KeyError as e:
-            logger.warning('qiskit aqua bug, ', e)
+        except KeyError:
+            pass
+        else:
+            logger.warning('qiskit aqua bug')
             logger.warning("Deleting 'wait'...")
             del self._quantum_instance.qjob_config['wait']
         self.initialized = False
