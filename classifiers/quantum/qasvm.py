@@ -1,8 +1,7 @@
-from inspect import Parameter
 import logging
 import numpy as np
 from itertools import product
-from qiskit.circuit.parametervector import ParameterVector
+from qiskit.circuit.parametervector import ParameterVector, Parameter
 from qiskit.circuit import QuantumCircuit
 from qiskit.aqua import QuantumInstance
 from sympy.logic.boolalg import Boolean
@@ -59,7 +58,7 @@ class QASVM(QuantumClassifier):
         self._var_form_params = None # set from self.var_form
         self._num_parameters = None # set from self.var_form
         self._initial_point = None # self.num_parameters should be defined first
-        self._parameters = {} # set from self.var_form
+        self._parameters = ParameterDict() # set from self.var_form
         self._feature_map = None # set self._feature_map_params
         self._feature_map_params = None # sef from self.feature_map
         self.naive_first_order_circuit = None # self.var_form, self.feature_map, self.had_transpiled should be defined first
@@ -161,7 +160,7 @@ class QASVM(QuantumClassifier):
             }
         self._var_form = var_form.assign_parameters(dict(zip(_var_form_params, self._var_form_params['0']))) if var_form is not None else var_form
         self._num_parameters = len(_var_form_params)
-        self._parameters = dict(zip(self._var_form_params['0'], np.empty(self._num_parameters)))
+        self._parameters = ParameterDict(zip(self._var_form_params['0'], np.empty(self._num_parameters)))
         self.initialized = False
 
     @property
@@ -420,11 +419,11 @@ class QASVM(QuantumClassifier):
             Return:
                 Dict of Z evals (float)"""
         if isinstance(param1, dict):
-            param_dict = param1
+            param_dict = dict(zip(self._var_form_params['i'], param1.values()))
         else:
             param_dict = dict(zip(self._var_form_params['i'], param1))
         if isinstance(param2, dict):
-            param_dict.update(param2)
+            param_dict.update(dict(zip(self._var_form_params['j'], param2.values())))
         else:
             param_dict.update(dict(zip(self._var_form_params['j'], param2)))
         _dict = self.quantum_instance.execute([self.second_order_circuit.assign_parameters(param_dict)], self.had_transpiled).get_counts()
@@ -433,17 +432,17 @@ class QASVM(QuantumClassifier):
         eval_dict['aayy'] = postprocess_Z_expectation(3, _dict, 1, 0)
         return eval_dict
 
-    def _evaluate_first_order_circuit(self, theta:Union[np.ndarray, List[float], Dict[Parameter, float]], data:Union[np.ndarray, List[np.ndarray]]) -> Dict[str, float]:
+    def _evaluate_first_order_circuit(self, param:Union[np.ndarray, List[float], Dict[Parameter, float]], data:Union[np.ndarray, List[np.ndarray]]) -> Dict[str, float]:
         """ evaluating first-order-circuit.
             Args:
-                theta: var_form parameters 'theta'
+                param: var_form parameters 'param'
                 data: feature_map parameters 'X', but in the form of iterable data i.e. [datum]
             Return:
                 Dict of Z evals (np.ndarray or float)."""
-        if isinstance(theta, dict):
-            param_dict = theta
+        if isinstance(param, dict):
+            param_dict = param
         else:
-            param_dict = dict(zip(self._var_form_params['0'], theta))
+            param_dict = dict(zip(self._var_form_params['0'], param))
         param_dict_list = [dict(zip(self._feature_map_params, datum)) for datum in data]
         [data_dict.update(param_dict) for data_dict in param_dict_list]
         qc_list = list(map(self.first_order_circuit.assign_parameters, param_dict_list))
@@ -477,8 +476,30 @@ class ParameterDict(dict):
         if isinstance(other, np.ndarray):
             for k,v in zip(self.keys(), other):
                 self[k]+=v
-    
+        elif isinstance(other, dict):
+            for k,v in zip(self.keys(), other.keys()):
+                self[k]+=other.get(v, 0)
+        elif isinstance(other, float) or isinstance(other, int):
+            for k in self.keys():
+                self[k]+=other
+        else:
+            self+=other
+        return self
+
     def __sub__(self, other):
         if isinstance(other, np.ndarray):
             for k,v in zip(self.keys(), other):
                 self[k]-=v
+        elif isinstance(other, dict):
+            for k,v in zip(self.keys(), other.keys()):
+                self[k]-=other.get(v, 0)
+        elif isinstance(other, float) or isinstance(other, int):
+            for k in self.keys():
+                self[k]+=other
+        else:
+            self-=other
+        return self
+    
+    def from_dict(self, d:dict):
+        for k,v in d.items():
+            self[k] = v
