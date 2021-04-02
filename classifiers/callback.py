@@ -1,15 +1,19 @@
-from typing import Callable
+from abc import ABC, abstractmethod
+from typing import Callable, Union
 
 import numpy as np
+from pandas import DataFrame
 from matplotlib import pyplot as plt
 
 from torch.utils.tensorboard import SummaryWriter
 
 from . import Classifier
+from .quantum.qasvm import ParameterDict
 
-class CallBack(object):
-    def __init__(self) -> None:
-        super().__init__()
+class CallBack(ABC):
+    @abstractmethod
+    def __call__(self):
+        raise NotImplementedError
 
 CallBack.save = Classifier.save
 
@@ -17,102 +21,108 @@ class BaseStorage(CallBack):
     def __init__(self, writer: SummaryWriter) -> None:
         super().__init__()
         self.writer=writer
+        self.data = DataFrame()
 
     def clear(self):
-        for attr, value in self.__dict__.items():
-            if isinstance(value, dict):
-                self.__setattr__(attr, {})
+        del self.data
+        self.data = DataFrame()
 
-class SimpleStorage(BaseStorage):
+class CostParamStorage(BaseStorage):
     """ saves simply costs and params"""
     def __init__(self, writer:SummaryWriter=None) -> None:
         super().__init__(writer)
-        self.params = {}
-        self.costs = {}
 
     def __call__(self, *args, **kwargs):
-        k, cost, theta = args[:3]
+        if len(args)==3:
+            k, cost, theta = args
+            cost_plus, cost_minus, theta_plus, theta_minus = None, None, None, None
+        elif len(args)==5:
+            k, cost, theta, cost_plus, cost_minus = args
+            theta_plus, theta_minus = None, None
+        elif len(args)==7:
+            k, cost, theta, cost_plus, cost_minus, theta_plus, theta_minus = args
+        else:
+            raise ValueError('Args: step, cost, theta[, cost_plus, cost_minus[, theta_plus, theta_minus]]')
         if isinstance(cost, Callable):
             cost = cost(theta)
-        self.params[k] = theta
-        self.costs[k] = cost
-        if self.writer is not None:
-            self.writer.add_scalar('Cost', cost, k)
-            self.writer.add_scalars('Parameters', dict(zip(map(str, range(len(theta))), theta)), k)
-
-    def plot_params(self):
-        params = np.array(list(self.params.values()))
-        steps = np.array(list(self.params.keys()))
-        [plt.plot(steps, params[:,i], label=f'parameter {i}') for i in range(params.shape[1])]
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.xlim([min(steps), max(steps)])
-        plt.yticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi], ['-$\pi$', '-$\pi/2$', '$0$', '$\pi/2$', '$\pi$'])
-        plt.xlabel('steps')
-        plt.ylabel('param value')
-        plt.grid()
-
-    def plot(self):
-        cost = np.array(list(self.costs.values()))
-        steps = np.array(list(self.params.keys()))
-        plt.plot(steps[0:], cost[0:], label='obj val', c='k', linewidth=0.5)
-        plt.grid()
-        plt.legend()
-
-class SimplePMStorage(SimpleStorage):
-    """ saves simply costs and params"""
-    def __init__(self, writer:SummaryWriter=None) -> None:
-        super().__init__(writer)
-        self.params_pm = {}
-        self.costs_pm = {}
-
-    def __call__(self, *args, **kwargs):
-        k, cost, theta, cost_plus, cost_minus, theta_plus, theta_minus = args[:7]
-        super().__call__(k, cost, theta)
-        if isinstance(cost_plus, Callable):
-            cost_plus = cost_plus(theta_plus)
         if isinstance(cost_minus, Callable):
             cost_minus = cost_minus(theta_minus)
-        self.params_pm[k] = [theta_minus, theta_plus]
-        self.costs_pm[k] = [cost_minus, cost_plus]
-        if self.writer is not None:
-            self.writer.add_scalar('Cost/+', cost_plus, k)
-            self.writer.add_scalar('Cost/-', cost_minus, k)
+        if isinstance(cost_plus, Callable):
+            cost_plus = cost_plus(theta_plus)
 
-    def plot(self):
-        cost_pm = np.array(list(self.costs_pm.values()))
-        cost = np.array(list(self.costs.values()))
-        steps = np.array(list(self.params.keys()))
-        plt.scatter(steps[0:], cost_pm[0:][:,0], label='t-', c='b', s=1)
-        plt.scatter(steps[0:], cost_pm[0:][:,1], label='t+', c='r', s=1)
-        plt.plot(steps[0:], cost[0:], label='t0', c='k', linewidth=0.5)
-        plt.grid()
-        plt.legend()
+        if isinstance(theta, dict):
+            _temp_dict = dict(zip(map(str, theta.keys()), theta.values()))
+        else:
+            _temp_dict = dict(zip(map(str, range(len(theta))), theta))
+        if cost is not None:
+            _temp_dict['Cost'] = cost
+        if cost_plus is not None:
+            _temp_dict['+'] = cost_plus
+        if cost_minus is not None:
+            _temp_dict['-'] = cost_minus
+        self.data = self.data.append(DataFrame(_temp_dict, index=[k]), ignore_index=False)
+        self.data.sort_index()
+
+        if self.writer is not None:
+            self.writer.add_scalar('Cost', cost, k)
+            if cost_plus is not None:
+                self.writer.add_scalar('Cost/+', cost_plus, k)
+            if cost_minus is not None:
+                self.writer.add_scalar('Cost/-', cost_minus, k)
+            self.writer.add_scalars('Parameters', _temp_dict, k)
+
+    def plot_params(self, ax=None, title='Parameters', linewidth=1, axis_labels=('steps', None)):
+        if ax is None:
+            ax = plt.gca()
+        try:
+            df = self.data.drop(['Cost', '+', '-'], axis=1)
+        except KeyError:
+            df = self.data.drop(['Cost'], axis=1)
+        df.plot(kind='line', ax=ax, grid=True, title=title, legend=False, linewidth=linewidth)
+        ax.legend(bbox_to_anchor=(1.02, 1.02))
+        ax.set_xlabel(axis_labels[0])
+        ax.set_ylabel(axis_labels[1])
+
+    def plot(self, ax=None, title='Costs', linewidth=0.5, s=1, c=('k', 'r', 'b'), label=('Cost', '+', '-'), axis_labels=('steps', None)):
+        if ax is None:
+            ax = plt.gca()
+        self.data.plot(y='Cost', kind='line', ax=ax, grid=True, title=title, legend=False, label=label[0], linewidth=linewidth, c=c[0])
+        if '+' in self.data.columns:
+            ax.scatter(self.data.index.to_numpy(), self.data['+'].to_numpy(), label=label[1], c=c[1], s=s)
+        if '-' in self.data.columns:
+            ax.scatter(self.data.index.to_numpy(), self.data['-'].to_numpy(), label=label[2], c=c[2], s=1)
+        ax.legend()
+        ax.set_xlabel(axis_labels[0])
+        ax.set_ylabel(axis_labels[1])
 
 class BaseStopping(CallBack):
     pass
 
-class ParamsPlatoStopping(BaseStopping):
-    def __init__(self, patiance:int=30, length:int=30, tol:float=1e-2) -> None:
+class ParamsStopping(BaseStopping):
+    def __init__(self, patiance:int=30, last_avg:int=30, tol:float=1e-2) -> None:
+        assert patiance>=0
+        assert last_avg>=2
+        assert tol>0
         super().__init__()
-        self.params = {}
+        self.watch_list = DataFrame()
         self.patiance = patiance
-        self.lenght = length
+        self.last_avg = last_avg
         self.tol = tol
-        self._flag = -1
+        self._FLAG = -1
+        self.best_params = ParameterDict()
 
-    def __call__(self, param:np.ndarray, step:int):
-        self.params[step] = param
-        steps = np.array(list(self.params.keys()))
-        params = np.array(list(self.params.values()))
-        last = max(steps)
-        intr_params = params[steps>last-self.lenght]
-        mean = np.mean(intr_params, axis=0)
-        if np.all(np.abs(mean-param)<self.tol):
-            self._flag+=1
+    def __call__(self, params:Union[np.ndarray, dict], step:int):
+        if isinstance(params, dict):
+            _temp_dict = dict(zip(map(str, params.keys()), params.values()))
         else:
-            self._flag = 0
-        if self._flag>=30:
-            return True
+            _temp_dict = dict(zip(map(str, range(len(params))), params))
+        if step%self.last_avg not in self.watch_list.index:
+            self.watch_list.append(DataFrame(_temp_dict, index=[step%self.last_avg]), ignore_index=False)
         else:
-            return False
-        
+            self.watch_list.loc[[step%self.last_avg]] = DataFrame(_temp_dict, index=[step%self.last_avg])
+        if len(self.watch_list)>=self.last_avg:
+            if (self.watch_list.std(axis=0)<self.tol).all():
+                self._FLAG+=1
+                if self._FLAG==self.patiance:
+                    self.best_params = self.watch_list.mean(axis=0).to_numpy()
+        return self.best_params
