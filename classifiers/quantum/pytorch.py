@@ -38,7 +38,7 @@ class QASVM_model(nn.Module):
         super().__init__()
         self.qasvm = qasvm
         if self.qasvm.initial_point is not None:
-            self.params = nn.Parameter(self.qasvm.initial_point)
+            self.params = nn.Parameter(list(self.qasvm.initial_point.values()))
         else:
             self.params = nn.Parameter(torch.randn(self.qasvm.num_parameters))
 

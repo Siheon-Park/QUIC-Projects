@@ -169,9 +169,15 @@ class QASVM(QuantumClassifier):
         return self._parameters
 
     @parameters.setter
-    def parameters(self, params:np.ndarray):
-        for k, v in zip(self._parameters.keys(), params):
-            self._parameters[k] = v
+    def parameters(self, params:Union[np.ndarray, Dict[Parameter, float]]):
+        if isinstance(params, np.ndarray):
+            for k, v in zip(self._parameters.keys(), params):
+                self._parameters[k] = v
+        elif isinstance(params, dict):
+            for k in self._parameters.keys():
+                self._parameters[k] = params[k]
+        else:
+            raise QuantumError
 
     @property
     def num_parameters(self)->int:
@@ -482,32 +488,34 @@ class QASVM(QuantumClassifier):
 
 class ParameterDict(dict):
     def __add__(self, other):
+        ret = ParameterDict()
         if isinstance(other, np.ndarray):
             for k,v in zip(self.keys(), other):
-                self[k]+=v
+                ret[k] = self[k]+v
         elif isinstance(other, dict):
             for k,v in zip(self.keys(), other.keys()):
-                self[k]+=other.get(v, 0)
+                ret[k] = self[k]+other.get(v, 0)
         elif isinstance(other, float) or isinstance(other, int):
             for k in self.keys():
-                self[k]+=other
+                ret[k] = self[k]+other
         else:
-            self+=other
-        return self
+            ret = self+other
+        return ret
 
     def __sub__(self, other):
+        ret = ParameterDict()
         if isinstance(other, np.ndarray):
             for k,v in zip(self.keys(), other):
-                self[k]-=v
+                ret[k] = self[k]-v
         elif isinstance(other, dict):
             for k,v in zip(self.keys(), other.keys()):
-                self[k]-=other.get(v, 0)
+                ret[k] = self[k]-other.get(v, 0)
         elif isinstance(other, float) or isinstance(other, int):
             for k in self.keys():
-                self[k]+=other
+                ret[k] = self[k]-other
         else:
-            self-=other
-        return self
+            ret = self-other
+        return ret
     
     def from_dict(self, d:dict):
         for k,v in d.items():
