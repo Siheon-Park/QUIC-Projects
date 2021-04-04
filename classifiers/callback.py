@@ -54,13 +54,14 @@ class CostParamStorage(BaseStorage):
             _temp_dict = dict(zip(map(str, theta.keys()), theta.values()))
         else:
             _temp_dict = dict(zip(map(str, range(len(theta))), theta))
+        _temp_dict2 = dict(_temp_dict)
         if cost is not None:
-            _temp_dict['Cost'] = cost
+            _temp_dict2['Cost'] = cost
         if cost_plus is not None:
-            _temp_dict['+'] = cost_plus
+            _temp_dict2['+'] = cost_plus
         if cost_minus is not None:
-            _temp_dict['-'] = cost_minus
-        self.data = self.data.append(DataFrame(_temp_dict, index=[k]), ignore_index=False)
+            _temp_dict2['-'] = cost_minus
+        self.data = self.data.append(DataFrame(_temp_dict2, index=[k]), ignore_index=False)
         self.data.sort_index()
 
         if self.writer is not None:
@@ -119,7 +120,7 @@ class ParamsStopping(BaseStopping):
         else:
             _temp_dict = dict(zip(map(str, range(len(params))), params))
         if step%self.last_avg not in self.watch_list.index:
-            self.watch_list.append(DataFrame(_temp_dict, index=[step%self.last_avg]), ignore_index=False)
+            self.watch_list = self.watch_list.append(DataFrame(_temp_dict, index=[step%self.last_avg]), ignore_index=False)
         else:
             self.watch_list.loc[[step%self.last_avg]] = DataFrame(_temp_dict, index=[step%self.last_avg])
         self.best_params = self.watch_list.mean(axis=0).to_numpy()

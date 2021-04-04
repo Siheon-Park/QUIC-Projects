@@ -9,11 +9,15 @@ from qiskit.circuit.parametervector import ParameterVector
 logger = logging.getLogger(__name__)
 
 class StocasticOptimizer(ABC):
-    def __init__(self, objective:Callable, params:Union[Dict[Parameter, float], np.ndarray], **hyperparams:dict) -> None:
+    def __init__(self, model:object, **hyperparams:dict) -> None:
         super().__init__()
-        self.objective = objective
+        try:
+            model.cost_fn
+            model.parameters
+        except AttributeError as e:
+            raise AttributeError(e)
+        self.model = model
         self.hyperparams = hyperparams
-        self.params = params
 
     @abstractmethod
     def step(self):
@@ -21,19 +25,18 @@ class StocasticOptimizer(ABC):
         raise NotImplementedError
 
 class SPSA(StocasticOptimizer):
-    def __init__(self, objective:Callable, 
-                 params:Union[Dict[Parameter, float], np.ndarray],
+    def __init__(self, model:object, 
                  c0: float = 2 * np.pi * 0.1,
                  c1: float = 0.1,
                  c2: float = 0.602,
                  c3: float = 0.101,
                  c4: float = 0) -> None:
-        super().__init__(objective, params, c0=c0, c1=c1, c2=c2, c3=c3, c4=c4)
+        super().__init__(model, c0=c0, c1=c1, c2=c2, c3=c3, c4=c4)
         self.k=0
 
     def step(self, k:int=None):
         """ evolve SPSA """
-        theta = self.params
+        theta = self.model.parameters
         if k is not None:
             self.k = k
         # SPSA Parameters
@@ -45,15 +48,14 @@ class SPSA(StocasticOptimizer):
         theta_plus = theta + c_spsa * delta
         theta_minus = theta - c_spsa * delta
         # cost function for the two directions
-        cost_plus = self.objective(theta_plus)
-        cost_minus = self.objective(theta_minus)
+        cost_plus = self.model.cost_fn(theta_plus)
+        cost_minus = self.model.cost_fn(theta_minus)
         # derivative estimate
         g_spsa = (cost_plus - cost_minus) * delta / (2.0 * c_spsa)
         # updated theta
-        theta = theta - a_spsa * g_spsa
+        self.model.parameters = theta - a_spsa * g_spsa
         logger.debug('Objective function at theta+ for step # %s: %1.7f', self.k, cost_plus)
         logger.debug('Objective function at theta- for step # %s: %1.7f', self.k, cost_minus)
-        self.params = theta
         self.k+=1
 
     def calibrate(self, maxiter:int=1000):
@@ -66,7 +68,7 @@ class SPSA(StocasticOptimizer):
 
         c1 is initial_c and is first perturbation of initial_theta.
         """
-        initial_theta = self.params
+        initial_theta = self.model.parameters
         num_steps_calibration = min(25, max(1, maxiter // 5))
         target_update = self.hyperparams['c0']
         initial_c = self.hyperparams['c1']
@@ -78,8 +80,8 @@ class SPSA(StocasticOptimizer):
             delta = 2 * aqua_globals.random.integers(2, size=len(initial_theta)) - 1
             theta_plus = initial_theta + initial_c * delta
             theta_minus = initial_theta - initial_c * delta
-            obj_plus = self.objective(theta_plus)
-            obj_minus = self.objective(theta_minus)
+            obj_plus = self.model.cost_fn(theta_plus)
+            obj_minus = self.model.cost_fn(theta_minus)
             delta_obj += np.absolute(obj_plus - obj_minus) / num_steps_calibration
 
         # only calibrate if delta_obj is larger than 0
