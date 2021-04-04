@@ -9,7 +9,8 @@ __pycache__
 # saved data
 *.dill
 *.pkl
-*/runs/*
+summary_ipynb
+.gitignore
 
 # spyder projects
 .spyproject
