@@ -18,9 +18,8 @@ class CallBack(ABC):
 CallBack.save = Classifier.save
 
 class BaseStorage(CallBack):
-    def __init__(self, writer: SummaryWriter) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.writer=writer
         self.data = DataFrame()
 
     def clear(self):
@@ -29,10 +28,11 @@ class BaseStorage(CallBack):
 
 class CostParamStorage(BaseStorage):
     """ saves simply costs and params"""
-    def __init__(self, writer:SummaryWriter=None) -> None:
-        super().__init__(writer)
+    def __init__(self) -> None:
+        super().__init__()
 
     def __call__(self, *args, **kwargs):
+        writer = kwargs.get('writer', None)
         if len(args)==3:
             k, cost, theta = args
             cost_plus, cost_minus, theta_plus, theta_minus = None, None, None, None
@@ -64,13 +64,13 @@ class CostParamStorage(BaseStorage):
         self.data = self.data.append(DataFrame(_temp_dict2, index=[k]), ignore_index=False)
         self.data.sort_index()
 
-        if self.writer is not None:
-            self.writer.add_scalar('Cost', cost, k)
+        if writer is not None:
+            writer.add_scalar('Cost', cost, k)
             if cost_plus is not None:
-                self.writer.add_scalar('Cost/+', cost_plus, k)
+                writer.add_scalar('Cost/+', cost_plus, k)
             if cost_minus is not None:
-                self.writer.add_scalar('Cost/-', cost_minus, k)
-            self.writer.add_scalars('Parameters', _temp_dict, k)
+                writer.add_scalar('Cost/-', cost_minus, k)
+            writer.add_scalars('Parameters', _temp_dict, k)
 
     def plot_params(self, ax=None, title='Parameters', linewidth=1, axis_labels=('steps', None)):
         if ax is None:
