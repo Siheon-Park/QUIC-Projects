@@ -50,5 +50,13 @@ class SPSA(new_SPSA):
         `arXiv:1704.05018v2 <https://arxiv.org/pdf/1704.05018v2.pdf#section*.11>`_
 
     """    
-    def __init__(self, blocking: bool=False, allowed_increase: Optional[float] = None, trust_region: bool=False, learning_rate: Optional[Union[float, Callable[[], Iterator]]], perturbation: Optional[Union[float, Callable[[], Iterator]]], last_avg: int, resamplings: Union[int, Dict[int, int]], perturbation_dims: Optional[int], callback: Optional[CALLBACK]) -> None:
-        super().__init__(maxiter=maxiter, blocking=blocking, allowed_increase=allowed_increase, trust_region=trust_region, learning_rate=learning_rate, perturbation=perturbation, last_avg=last_avg, resamplings=resamplings, perturbation_dims=perturbation_dims, callback=callback)
+    def __init__(self, model:object, 
+                 c0: float = 2 * np.pi * 0.1,
+                 c1: float = 0.1,
+                 c2: float = 0.602,
+                 c3: float = 0.101,
+                 c4: float = 0) -> None:
+        super().__init__(model, c0=c0, c1=c1, c2=c2, c3=c3, c4=c4)
+        self.k=0
+
+    def calibrate()
