@@ -1,93 +1,54 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, Union
+from typing import Callable, Dict, Iterator, Optional, Union
 import logging
 import numpy as np
 from qiskit.aqua import aqua_globals
 from qiskit.circuit.parameter import Parameter
 from qiskit.circuit.parametervector import ParameterVector
+from qiskit.algorithms.optimizers.spsa import SPSA as new_SPSA
 
 logger = logging.getLogger(__name__)
 
-class StocasticOptimizer(ABC):
-    def __init__(self, model:object, **hyperparams:dict) -> None:
-        super().__init__()
-        try:
-            model.cost_fn
-            model.parameters
-        except AttributeError as e:
-            raise AttributeError(e)
-        self.model = model
-        self.hyperparams = hyperparams
+class SPSA(new_SPSA):
+    """Simultaneous Perturbation Stochastic Approximation (SPSA) optimizer.
 
-    @abstractmethod
-    def step(self):
-        """ evolve optimizer """
-        raise NotImplementedError
+    SPSA [1] is an algorithmic method for optimizing systems with multiple unknown parameters.
+    As an optimization method, it is appropriately suited to large-scale population models,
+    adaptive modeling, and simulation optimization.
 
-class SPSA(StocasticOptimizer):
-    def __init__(self, model:object, 
-                 c0: float = 2 * np.pi * 0.1,
-                 c1: float = 0.1,
-                 c2: float = 0.602,
-                 c3: float = 0.101,
-                 c4: float = 0) -> None:
-        super().__init__(model, c0=c0, c1=c1, c2=c2, c3=c3, c4=c4)
-        self.k=0
+    .. seealso::
 
-    def step(self, k:int=None):
-        """ evolve SPSA """
-        theta = self.model.parameters
-        if k is not None:
-            self.k = k
-        # SPSA Parameters
-        a_spsa = float(self.hyperparams['c0']) / np.power(self.k + 1 + self.hyperparams['c4'],
-                                                        self.hyperparams['c2'])
-        c_spsa = float(self.hyperparams['c1']) / np.power(self.k + 1, self.hyperparams['c3'])
-        delta = 2 * aqua_globals.random.integers(2, size=len(theta)) - 1
-        # plus and minus directions
-        theta_plus = theta + c_spsa * delta
-        theta_minus = theta - c_spsa * delta
-        # cost function for the two directions
-        cost_plus = self.model.cost_fn(theta_plus)
-        cost_minus = self.model.cost_fn(theta_minus)
-        # derivative estimate
-        g_spsa = (cost_plus - cost_minus) * delta / (2.0 * c_spsa)
-        # updated theta
-        self.model.parameters = theta - a_spsa * g_spsa
-        logger.debug('Objective function at theta+ for step # %s: %1.7f', self.k, cost_plus)
-        logger.debug('Objective function at theta- for step # %s: %1.7f', self.k, cost_minus)
-        self.k+=1
+        Many examples are presented at the `SPSA Web site <http://www.jhuapl.edu/SPSA>`__.
 
-    def calibrate(self, maxiter:int=1000):
-        """Calibrates and stores the SPSA parameters back.
+    SPSA is a descent method capable of finding global minima,
+    sharing this property with other methods as simulated annealing.
+    Its main feature is the gradient approximation, which requires only two
+    measurements of the objective function, regardless of the dimension of the optimization
+    problem.
 
-        SPSA parameters are c0 through c5 stored in parameters array
+    .. note::
 
-        c0 on input is target_update and is the aimed update of variables on the first trial step.
-        Following calibration c0 will be updated.
+        SPSA can be used in the presence of noise, and it is therefore indicated in situations
+        involving measurement uncertainty on a quantum computation when finding a minimum.
+        If you are executing a variational algorithm using a Quantum ASseMbly Language (QASM)
+        simulator or a real device, SPSA would be the most recommended choice among the optimizers
+        provided here.
 
-        c1 is initial_c and is first perturbation of initial_theta.
-        """
-        initial_theta = self.model.parameters
-        num_steps_calibration = min(25, max(1, maxiter // 5))
-        target_update = self.hyperparams['c0']
-        initial_c = self.hyperparams['c1']
-        delta_obj = 0
-        logger.debug("Calibration...")
-        for i in range(num_steps_calibration):
-            if i % 5 == 0:
-                logger.debug('calibration step # %s of %s', str(i), str(num_steps_calibration))
-            delta = 2 * aqua_globals.random.integers(2, size=len(initial_theta)) - 1
-            theta_plus = initial_theta + initial_c * delta
-            theta_minus = initial_theta - initial_c * delta
-            obj_plus = self.model.cost_fn(theta_plus)
-            obj_minus = self.model.cost_fn(theta_minus)
-            delta_obj += np.absolute(obj_plus - obj_minus) / num_steps_calibration
+    The optimization process can includes a calibration phase if neither the ``learning_rate`` nor
+    ``perturbation`` is provided, which requires additional functional evaluations.
+    (Note that either both or none must be set.) For further details on the automatic calibration,
+    please refer to the supplementary information section IV. of [2].
 
-        # only calibrate if delta_obj is larger than 0
-        if delta_obj > 0:
-            self.hyperparams['c0'] = target_update * 2 / delta_obj \
-                * self.hyperparams['c1'] * (self.hyperparams['c4'] + 1)
-            logger.debug('delta_obj is 0, not calibrating (since this would set c0 to inf)')
+    References:
 
-        logger.debug('Calibrated SPSA parameter c0 is %.7f', self.hyperparams['c0'])
+        [1]: J. C. Spall (1998). An Overview of the Simultaneous Perturbation Method for Efficient
+        Optimization, Johns Hopkins APL Technical Digest, 19(4), 482–492.
+        `Online. <https://www.jhuapl.edu/SPSA/PDF-SPSA/Spall_An_Overview.PDF>`_
+
+        [2]: A. Kandala et al. (2017). Hardware-efficient Variational Quantum Eigensolver for
+        Small Molecules and Quantum Magnets. Nature 549, pages242–246(2017).
+        `arXiv:1704.05018v2 <https://arxiv.org/pdf/1704.05018v2.pdf#section*.11>`_
+
+    """    
+    def __init__(self, blocking: bool=False, allowed_increase: Optional[float] = None, trust_region: bool=False, learning_rate: Optional[Union[float, Callable[[], Iterator]]], perturbation: Optional[Union[float, Callable[[], Iterator]]], last_avg: int, resamplings: Union[int, Dict[int, int]], perturbation_dims: Optional[int], callback: Optional[CALLBACK]) -> None:
+        super().__init__(maxiter=maxiter, blocking=blocking, allowed_increase=allowed_increase, trust_region=trust_region, learning_rate=learning_rate, perturbation=perturbation, last_avg=last_avg, resamplings=resamplings, perturbation_dims=perturbation_dims, callback=callback)
