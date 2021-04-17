@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from classifiers.quantum.qasvm import QASVM
+from classifiers import Classifier
 from typing import Callable, Dict, Iterator, Optional, Union
 import logging
 import numpy as np
@@ -53,7 +55,7 @@ class SPSA(new_SPSA):
 
     """    
     def __init__(self,
-                 model: object,
+                 model: QASVM,
                  blocking: bool = False,
                  allowed_increase: Optional[float] = None,
                  trust_region: bool = False,
@@ -105,9 +107,9 @@ class SPSA(new_SPSA):
         # ensure learning rate and perturbation are correctly set: either none or both
         # this happens only here because for the calibration the loss function is required
         loss = self.model.cost_fn
-        initial_point = np.asarray(list(self.model.parameters.values()))
+        x = self.model.parameters
         if self.learning_rate is None and self.perturbation is None:
-            get_learning_rate, get_perturbation = self.calibrate(loss, initial_point)
+            get_learning_rate, get_perturbation = self.calibrate(loss, x)
             # get iterator
             eta = get_learning_rate()
             eps = get_perturbation()
@@ -117,9 +119,6 @@ class SPSA(new_SPSA):
             # get iterator
             eta = self.learning_rate()
             eps = self.perturbation()
-
-        # prepare some initials
-        x = np.asarray(initial_point)
 
         self._nfev = 0
 
@@ -141,12 +140,10 @@ class SPSA(new_SPSA):
     def step(self, callback:CALLBACK=None, k:int=None):
         if k is None:
             k = self.k
-        eta = self.eta
-        eps = self.eps
         loss = self.model.cost_fn
         x = np.asarray(list(self.model.parameters.values()))
         # compute update
-        update = self._compute_update(loss, x, k, next(eps))
+        update = self._compute_update(loss, x, k, next(self.eps))
 
         # trust region
         if self.trust_region:
@@ -155,7 +152,7 @@ class SPSA(new_SPSA):
                 update = update / norm
 
         # compute next parameter value
-        update = update * next(eta)
+        update = update * next(self.eta)
         x_next = x - update
 
         # blocking
