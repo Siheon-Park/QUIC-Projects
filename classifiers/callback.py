@@ -130,3 +130,23 @@ class ParamsStopping(BaseStopping):
                 if self._FLAG==self.patiance:
                     return True
         return False
+
+class LastAvgStorage(CallBack):
+    def __init__(self, last_avg:int=30) -> None:
+        super().__init__()
+        self.watch_list = DataFrame()
+        self.last_avg = last_avg
+
+    def __call__(self, params:Union[np.ndarray, dict], step:int):
+        if isinstance(params, dict):
+            _temp_dict = dict(zip(map(str, params.keys()), params.values()))
+        else:
+            _temp_dict = dict(zip(map(str, range(len(params))), params))
+        if step%self.last_avg not in self.watch_list.index:
+            self.watch_list = self.watch_list.append(DataFrame(_temp_dict, index=[step%self.last_avg]), ignore_index=False)
+        else:
+            self.watch_list.loc[[step%self.last_avg]] = DataFrame(_temp_dict, index=[step%self.last_avg])
+
+    @property
+    def best_params(self):
+        return self.watch_list.mean(axis=0).to_numpy()

@@ -226,9 +226,10 @@ class QASVM(QuantumClassifier):
         except KeyError:
             pass
         else:
-            logger.warning('qiskit aqua bug')
-            logger.warning("Deleting 'wait'...")
-            del self._quantum_instance.qjob_config['wait']
+            if self._quantum_instance.is_simulator:
+                logger.warning('qiskit aqua bug')
+                logger.warning("Deleting 'wait'...")
+                del self._quantum_instance.qjob_config['wait']
         self.initialized = False
 
 # had_transpiled
@@ -520,3 +521,7 @@ class ParameterDict(dict):
     def from_dict(self, d:dict):
         for k,v in d.items():
             self[k] = v
+
+    @property
+    def size(self):
+        return len(self)
