@@ -3,13 +3,14 @@ import numpy as np
 from itertools import product
 from qiskit.circuit.parametervector import ParameterVector, Parameter
 from qiskit.circuit import QuantumCircuit
-from qiskit.aqua import QuantumInstance
+from qiskit.utils import QuantumInstance
 from sympy.logic.boolalg import Boolean
 from . import postprocess_Z_expectation
 from .quantum_circuits import QASVM_circuit, _CIRCUIT_CLASS_DICT
 from . import QuantumError
 from . import QuantumClassifier
 from typing import Any, Union, Optional, Dict, List, Callable
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -85,10 +86,7 @@ class QASVM(QuantumClassifier):
     @initialized.setter
     def initialized(self, tf:Boolean):
         if self._initialized != tf:
-            try:
-                self._basic_circuits_construction()
-            except Exception as e:
-                logger.warning("[{:}] has raised. Cannot construct circuits".format(repr(e)))
+            self._basic_circuits_construction()
             self._initialized = True
 
 # self.circuit_class
@@ -220,16 +218,6 @@ class QASVM(QuantumClassifier):
     @quantum_instance.setter
     def quantum_instance(self, quantum_instance:QuantumInstance):
         self._quantum_instance = quantum_instance
-        # aqua bug
-        try:
-            self._quantum_instance.qjob_config['wait']
-        except KeyError:
-            pass
-        else:
-            if self._quantum_instance.is_simulator:
-                logger.warning('qiskit aqua bug')
-                logger.warning("Deleting 'wait'...")
-                del self._quantum_instance.qjob_config['wait']
         self.initialized = False
 
 # had_transpiled
@@ -246,7 +234,10 @@ class QASVM(QuantumClassifier):
         assert isinstance(tf, bool)
 
         if tf:
+            _temp = self.quantum_instance.compile_config['initial_layout']
+            self.quantum_instance.compile_config['initial_layout'] = _temp._layout_for_first_order_circuit
             self.transpiled_first_order_circuit = self.quantum_instance.transpile(self.naive_first_order_circuit)[0]
+            self.quantum_instance.compile_config['initial_layout'] = _temp
             self.transpiled_second_order_circuit = self.quantum_instance.transpile(self.naive_second_order_circuit)[0]
         else:
             self.transpiled_first_order_circuit = None
@@ -397,7 +388,7 @@ class QASVM(QuantumClassifier):
         """ setting first and second order circuits and transpile if needed. """
         self.naive_second_order_circuit = self._construct_second_order_circuit()
         self.naive_first_order_circuit = self._construct_firt_order_circuit()
-        if self.quantum_instance.is_local:
+        if 'ibmq' not in self.quantum_instance.backend_name:
             self.had_transpiled = False
         else:
             self.had_transpiled = True
