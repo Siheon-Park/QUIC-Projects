@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Union
+from typing import Callable, Dict, Union
 
 import numpy as np
 from pandas import DataFrame
@@ -31,70 +31,51 @@ class CostParamStorage(BaseStorage):
     def __init__(self) -> None:
         super().__init__()
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, k, parameters, cost, step_size, isaccepted, **kwargs):
+        """Args: k, parameters, cost, step_size, isaccepted"""
         writer = kwargs.get('writer', None)
-        if len(args)==3:
-            k, cost, theta = args
-            cost_plus, cost_minus, theta_plus, theta_minus = None, None, None, None
-        elif len(args)==5:
-            k, cost, theta, cost_plus, cost_minus = args
-            theta_plus, theta_minus = None, None
-        elif len(args)==7:
-            k, cost, theta, cost_plus, cost_minus, theta_plus, theta_minus = args
-        else:
-            raise ValueError('Args: step, cost, theta[, cost_plus, cost_minus[, theta_plus, theta_minus]]')
-        if isinstance(cost, Callable):
-            cost = cost(theta)
-        if isinstance(cost_minus, Callable):
-            cost_minus = cost_minus(theta_minus)
-        if isinstance(cost_plus, Callable):
-            cost_plus = cost_plus(theta_plus)
 
-        if isinstance(theta, dict):
-            _temp_dict = dict(zip(map(str, theta.keys()), theta.values()))
+        if isinstance(cost, Callable):
+            cost = cost(parameters)
+
+        if isinstance(parameters, dict):
+            _temp_dict = dict(zip(map(str, parameters.keys()), parameters.values()))
         else:
-            _temp_dict = dict(zip(map(str, range(len(theta))), theta))
-        _temp_dict2 = dict(_temp_dict)
-        if cost is not None:
-            _temp_dict2['Cost'] = cost
-        if cost_plus is not None:
-            _temp_dict2['+'] = cost_plus
-        if cost_minus is not None:
-            _temp_dict2['-'] = cost_minus
-        self.data = self.data.append(DataFrame(_temp_dict2, index=[k]), ignore_index=False)
-        self.data.sort_index()
+            _temp_dict = dict(zip(map(str, range(len(parameters))), parameters))
+        _temp_dict2 = dict(Step=k)
+        _temp_dict2.update(_temp_dict)
+        _temp_dict2['Cost'] = cost
+        _temp_dict2['Step Size'] = step_size
+        _temp_dict2['Accepted'] = isaccepted
+        self.data = self.data.append(DataFrame(_temp_dict2, index=[k]), ignore_index=False).sort_index()
 
         if writer is not None:
             writer.add_scalar('Cost', cost, k)
-            if cost_plus is not None:
-                writer.add_scalar('Cost/+', cost_plus, k)
-            if cost_minus is not None:
-                writer.add_scalar('Cost/-', cost_minus, k)
             writer.add_scalars('Parameters', _temp_dict, k)
+            if isaccepted:
+                writer.add_scalar('Cost(accepted)', cost, k)
+                writer.add_scalars('Parameters(accepted)', _temp_dict, k)
 
     def plot_params(self, ax=None, title='Parameters', linewidth=1, axis_labels=('steps', None)):
         if ax is None:
             ax = plt.gca()
-        try:
-            df = self.data.drop(['Cost', '+', '-'], axis=1)
-        except KeyError:
-            df = self.data.drop(['Cost'], axis=1)
-        df.plot(kind='line', ax=ax, grid=True, title=title, legend=False, linewidth=linewidth)
+        isaccepted = self.data['Accepted']=='True'
+        df = self.data.drop(['Cost', 'Step Size', 'Accepted'], axis=1).loc[isaccepted]
+        ret = df.plot(kind='line', ax=ax, grid=True, title=title, legend=False, linewidth=linewidth)
         ax.legend(bbox_to_anchor=(1.02, 1.02))
         ax.set_xlabel(axis_labels[0])
         ax.set_ylabel(axis_labels[1])
+        return ret
 
-    def plot(self, ax=None, title='Costs', linewidth=0.5, s=1, c=('k', 'r', 'b'), label=('Cost', '+', '-'), axis_labels=('steps', None)):
+    def plot(self, ax=None, title='Costs', linewidth=0.5, s=1, c='k', label='Cost', axis_labels=('steps', None)):
         if ax is None:
             ax = plt.gca()
-        self.data.plot(y='Cost', kind='line', ax=ax, grid=True, title=title, legend=False, label=label[0], linewidth=linewidth, c=c[0])
-        if '+' in self.data.columns:
-            ax.scatter(self.data.index.to_numpy(), self.data['+'].to_numpy(), label=label[1], c=c[1], s=s)
-        if '-' in self.data.columns:
-            ax.scatter(self.data.index.to_numpy(), self.data['-'].to_numpy(), label=label[2], c=c[2], s=1)
+        isaccepted = self.data['Accepted']=='True'
+        ret = self.data.loc[isaccepted].plot(y='Cost', kind='line', ax=ax, grid=True, title=title, legend=False, label=label, linewidth=linewidth, c=c[0])
         ax.legend()
         ax.set_xlabel(axis_labels[0])
         ax.set_ylabel(axis_labels[1])
+        return ret
 
 class BaseStopping(CallBack):
     pass
