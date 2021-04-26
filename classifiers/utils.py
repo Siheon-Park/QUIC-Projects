@@ -52,8 +52,12 @@ def clean_exp_logs(dir_path:pathlib.Path=None):
             p.unlink()
 
 def dill_save(self, filepath):
-    with open(filepath, 'wb') as f:
-        dill.dump(self, f)
+    if isinstance(filepath, pathlib.Path):
+        with filepath.open('wb') as f:
+            dill.dump(self, f)
+    else:
+        with open(filepath, 'wb') as f:
+            dill.dump(self, f)
 
 def load_from_log(log_file:pathlib.Path, class_name:str, prefix:str=' is saved via package "dill" at '):
     with open(log_file, 'r') as f:
