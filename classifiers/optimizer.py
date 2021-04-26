@@ -88,11 +88,11 @@ class SPSA(new_SPSA):
                 dimensions are chosen uniformly at random.
         """
         try:
-            self.model.cost_fn
+            model.cost_fn
         except AttributeError as e:
             raise AttributeError(e, "'cost_fn' should be Callable")
         try:
-            self.model.parameters
+            model.parameters
         except ArithmeticError as e:
             raise AttributeError(e, "'parameters' should be Union[np.ndarray, Dict[Parameter, float], ParameterDict]")
         self.model = model
@@ -111,14 +111,14 @@ class SPSA(new_SPSA):
         if self.learning_rate is None and self.perturbation is None:
             get_learning_rate, get_perturbation = self.calibrate(loss, x)
             # get iterator
-            eta = get_learning_rate()
-            eps = get_perturbation()
+            self.eta = get_learning_rate()
+            self.eps = get_perturbation()
         elif self.learning_rate is None or self.perturbation is None:
             raise ValueError('If one of learning rate or perturbation is set, both must be set.')
         else:
             # get iterator
-            eta = self.learning_rate()
-            eps = self.perturbation()
+            self.eta = self.learning_rate()
+            self.eps = self.perturbation()
 
         self._nfev = 0
 
@@ -133,17 +133,13 @@ class SPSA(new_SPSA):
         logger.info('=' * 30)
         logger.info('Starting SPSA optimization')
 
-        self.eta = eta
-        self.eps = eps
         self.k = 0
 
-    def step(self, callback:CALLBACK=None, k:int=None):
-        if k is None:
-            k = self.k
+    def step(self, callback:CALLBACK=None):
         loss = self.model.cost_fn
-        x = np.asarray(list(self.model.parameters.values()))
+        x = self.model.parameters
         # compute update
-        update = self._compute_update(loss, x, k, next(self.eps))
+        update = self._compute_update(loss, x, self.k, next(self.eps))
 
         # trust region
         if self.trust_region:
@@ -154,7 +150,7 @@ class SPSA(new_SPSA):
         # compute next parameter value
         update = update * next(self.eta)
         x_next = x - update
-
+        self.k+=1
         # blocking
         if self.blocking:
             fx_next = loss(x_next)
@@ -162,21 +158,21 @@ class SPSA(new_SPSA):
             self._nfev += 1
             if self.fx + self.allowed_increase <= fx_next:  # accept only if self.model.cost_fn improved
                 if callback is not None:
-                    callback(self._nfev,  # number of function evals
+                    callback(self.k,  # number of function evals
                             x_next,  # next parameters
                             fx_next,  # loss at next parameters
                             np.linalg.norm(update),  # size of the update step
                             False)  # not accepted
 
-                logger.info('Iteration %s rejected.', k)
+                logger.info('Iteration %s rejected.', self.k)
                 return None
             self.fx = fx_next
 
-        logger.info('Iteration %s done.', k)
+        logger.info('Iteration %s done.', self.k)
         if callback is not None:
-            callback(self._nfev,  # number of function evals
+            callback(self.k,  # number of function evals
                     x_next,  # next parameters
-                    fx_next,  # loss at next parameters
+                    loss,  # loss at next parameters
                     np.linalg.norm(update),  # size of the update step
                     True)  # accepted
         # update parameters
