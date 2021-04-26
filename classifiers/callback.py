@@ -1,14 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, Union
+from typing import Callable, Union
 
 import numpy as np
-from pandas import DataFrame
+from pandas import DataFrame, melt
 from matplotlib import pyplot as plt
+from seaborn import relplot, lineplot, scatterplot
 
 from torch.utils.tensorboard import SummaryWriter
 
 from . import Classifier
-from .quantum.qasvm import ParameterDict
 
 class CallBack(ABC):
     @abstractmethod
@@ -28,13 +28,14 @@ class BaseStorage(CallBack):
 
 class CostParamStorage(BaseStorage):
     """ saves simply costs and params"""
-    def __init__(self) -> None:
+    def __init__(self, interval:int=1) -> None:
         super().__init__()
+        self.intv = interval
 
-    def __call__(self, k, parameters, cost, step_size, isaccepted, **kwargs):
+    def __call__(self, k, parameters, cost, step_size, isaccepted):
         """Args: k, parameters, cost, step_size, isaccepted"""
-        writer = kwargs.get('writer', None)
-
+        if k%self.intv != 0:
+            cost=None
         if isinstance(cost, Callable):
             cost = cost(parameters)
 
@@ -49,6 +50,11 @@ class CostParamStorage(BaseStorage):
         _temp_dict2['Accepted'] = isaccepted
         self.data = self.data.append(DataFrame(_temp_dict2, index=[k]), ignore_index=False).sort_index()
 
+    def add_writer(self, writer:SummaryWriter):
+        k = self.data['Step'].iloc[-1]
+        _temp_dict = self.data[self.data.columns[1:-3]].iloc[-1].to_dict()
+        cost = self.data['Cost'].iloc[-1]
+        isaccepted = self.data['Accepted'].iloc[-1]
         if writer is not None:
             writer.add_scalar('Cost', cost, k)
             writer.add_scalars('Parameters', _temp_dict, k)
@@ -56,26 +62,37 @@ class CostParamStorage(BaseStorage):
                 writer.add_scalar('Cost(accepted)', cost, k)
                 writer.add_scalars('Parameters(accepted)', _temp_dict, k)
 
-    def plot_params(self, ax=None, title='Parameters', linewidth=1, axis_labels=('steps', None)):
-        if ax is None:
-            ax = plt.gca()
-        isaccepted = self.data['Accepted']=='True'
-        df = self.data.drop(['Cost', 'Step Size', 'Accepted'], axis=1).loc[isaccepted]
-        ret = df.plot(kind='line', ax=ax, grid=True, title=title, legend=False, linewidth=linewidth)
-        ax.legend(bbox_to_anchor=(1.02, 1.02))
-        ax.set_xlabel(axis_labels[0])
-        ax.set_ylabel(axis_labels[1])
-        return ret
+    def plot_params(self, title:str='Parameters', ylabel:str='Value', method:str='relplot', ax=None, **kwargs):
+        df = melt(self.data, id_vars=['Step', 'Accepted'], value_vars=self.data.columns[1:-3], var_name=title, value_name=ylabel)
+        if method=='relplot':
+            g = relplot(data=df, x='Step', y=ylabel, hue=title, style="Accepted", style_order=[True, False], **kwargs)
+        elif method=='mpl':
+            if ax is None:
+                ax = plt.gca()
+            lineplot(data=df[df['Accepted']==True], x='Step', y=ylabel, hue=title, style_order=[True, False], ax=ax, legend=True, **kwargs)
+            scatterplot(data=df[df['Accepted']==False], x='Step', y=ylabel, hue=title, style="Accepted", style_order=[True, False], ax=ax, legend=False, **kwargs)
+            g=ax
+        else:
+            raise ValueError(f'No such method as {method}')
+        plt.grid()
 
-    def plot(self, ax=None, title='Costs', linewidth=0.5, s=1, c='k', label='Cost', axis_labels=('steps', None)):
-        if ax is None:
-            ax = plt.gca()
-        isaccepted = self.data['Accepted']=='True'
-        ret = self.data.loc[isaccepted].plot(y='Cost', kind='line', ax=ax, grid=True, title=title, legend=False, label=label, linewidth=linewidth, c=c[0])
-        ax.legend()
-        ax.set_xlabel(axis_labels[0])
-        ax.set_ylabel(axis_labels[1])
-        return ret
+        return g
+
+    def plot(self, method:str='relplot', ax=None, **kwargs):
+        if method=='relplot':
+            g=relplot(data=self.data, x='Step', y='Cost', style='Accepted', style_order=[True, False], **kwargs)
+        elif method=='mpl':
+            if ax is None:
+                ax = plt.gca()
+            lineplot(data=self.data[self.data['Accepted']==True], x='Step', y='Cost', style='Accepted', ax=ax, legend=True, **kwargs)
+            scatterplot(data=self.data[self.data['Accepted']==False], x='Step', y='Cost', style='Accepted', ax=ax, legend=True, **kwargs)
+            g=ax
+        else:
+            raise ValueError(f'No such method as {method}')
+        return g
+
+    def last_avg(self, last:int):
+        return self.data[self.data.columns[1:-3]][-last:].mean(axis=0).to_numpy()
 
 class BaseStopping(CallBack):
     pass
