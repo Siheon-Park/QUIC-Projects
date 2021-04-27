@@ -55,7 +55,7 @@ class CostParamStorage(BaseStorage):
         _temp_dict = self.data[self.data.columns[1:-3]].iloc[-1].to_dict()
         cost = self.data['Cost'].iloc[-1]
         isaccepted = self.data['Accepted'].iloc[-1]
-        if writer is not None:
+        if cost is not None:
             writer.add_scalar('Cost', cost, k)
             writer.add_scalars('Parameters', _temp_dict, k)
             if isaccepted:
