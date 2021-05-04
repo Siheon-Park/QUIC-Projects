@@ -95,6 +95,9 @@ class CostParamStorage(BaseStorage):
     def last_avg(self, last:int):
         return self.data[self.data.columns[1:-3]][-last:].mean(axis=0).to_numpy()
 
+    def last_std(self, last:int):
+        return self.data[self.data.columns[1:-3]][-last:].std(axis=0).to_numpy()
+
 class BaseStopping(CallBack):
     pass
 
