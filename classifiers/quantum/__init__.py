@@ -36,8 +36,8 @@ class Qasvm_Mapping_4x2(Layout):
                 self.updated_date = '2021/04/19 01:12'
                 self._prefered_mapping_order = [23, 15, 17, 21, 18, 26, 22, 24, 25]
             elif 'toronto' in self._backend_name:
-                self.updated_date = '2021/04/28 01:00'
-                self._prefered_mapping_order = [23, 15, 17, 21, 18, 22, 26, 24, 25]
+                self.updated_date = '2021/05/04 23:16'
+                self._prefered_mapping_order = [7, 0, 2, 4, 1, 13, 15, 10, 12]
             else:
                 raise QuantumError('No support for {:}'.format(self._backend_name))
             super().__init__(dict(zip(self._QUBIT_LISTS, self._prefered_mapping_order)))
