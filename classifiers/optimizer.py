@@ -99,7 +99,7 @@ class SPSA(new_SPSA):
         super().__init__(blocking=blocking, allowed_increase=allowed_increase, trust_region=trust_region, learning_rate=learning_rate, perturbation=perturbation, perturbation_dims=perturbation_dims, resamplings=resamplings)
         del self.maxiter
         del self.last_avg
-
+        self.fx = None
         self._prepare_optimization()
 
 
@@ -170,11 +170,18 @@ class SPSA(new_SPSA):
 
         logger.info('Iteration %s done.', self.k)
         if callback is not None:
-            callback(self.k,  # number of function evals
-                    x_next,  # next parameters
-                    loss,  # loss at next parameters
-                    np.linalg.norm(update),  # size of the update step
-                    True)  # accepted
+            if self.fx is None:
+                callback(self.k,  # number of function evals
+                        x_next,  # next parameters
+                        loss,  # loss at next parameters
+                        np.linalg.norm(update),  # size of the update step
+                        True)  # accepted
+            else:
+                callback(self.k,  # number of function evals
+                        x_next,  # next parameters
+                        self.fx,  # loss at next parameters
+                        np.linalg.norm(update),  # size of the update step
+                        True)  # accepted
         # update parameters
         self.model.parameters = x_next
         return None
