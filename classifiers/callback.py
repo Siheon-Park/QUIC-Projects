@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from seaborn import relplot, lineplot, scatterplot
 
 from torch.utils.tensorboard import SummaryWriter
+import logging
 
 from . import Classifier
 
@@ -129,22 +130,19 @@ class ParamsStopping(BaseStopping):
                     return True
         return False
 
-class LastAvgStorage(CallBack):
-    def __init__(self, last_avg:int=30) -> None:
+class BaseJobCallback(CallBack):
+    pass
+
+class JobLogger(BaseJobCallback):
+    def __init__(self, logfile:str='./job_log.log', loglevel:int=logging.INFO) -> None:
         super().__init__()
-        self.watch_list = DataFrame()
-        self.last_avg = last_avg
+        self.logger = logging.getLogger('job_logger')
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler = logging.FileHandler(logfile)
+        handler.setLevel(loglevel)
+        handler.setFormatter(formatter)
+        self.logger.setLevel(loglevel)
+        self.logger.addHandler(handler)
 
-    def __call__(self, params:Union[np.ndarray, dict], step:int):
-        if isinstance(params, dict):
-            _temp_dict = dict(zip(map(str, params.keys()), params.values()))
-        else:
-            _temp_dict = dict(zip(map(str, range(len(params))), params))
-        if step%self.last_avg not in self.watch_list.index:
-            self.watch_list = self.watch_list.append(DataFrame(_temp_dict, index=[step%self.last_avg]), ignore_index=False)
-        else:
-            self.watch_list.loc[[step%self.last_avg]] = DataFrame(_temp_dict, index=[step%self.last_avg])
-
-    @property
-    def best_params(self):
-        return self.watch_list.mean(axis=0).to_numpy()
+    def __call__(self, job_id, job_status, queue_position, job):
+        pass
