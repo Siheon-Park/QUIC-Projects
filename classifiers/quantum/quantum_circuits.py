@@ -112,6 +112,8 @@ class _uc_QASVM_circuit(QASVM_circuit):
         self.uc([U3Gate(theta, phi, 0).to_matrix() for theta, phi in training_data], ctrl_q, target_q)
         self.ucrx(list(np.where(training_label>0.5, 0, np.pi)), ctrl_q, target_y)
 
+_uc_QASVM_circuit.X_encode = Bloch_sphere_QASVM_circuit.X_encode
+
 # global variables
 _CIRCUIT_CLASS_DICT = {
     'QASVM': QASVM_circuit,
