@@ -20,20 +20,20 @@ class QASVM_circuit(QuantumCircuit):
             qc.SWAP_test()
             qc.Z_expectation_measurement()
     """
-    def __init__(self, num_data:int, dim_data:int, ord:int) -> None:
+    def __init__(self, num_index_qubits:int, num_data_qubits:int, ord:int) -> None:
         assert (ord==1 or ord==2)
         super().__init__()
         regs = []
         regs.append(QuantumRegister(1, 'a'))
-        regs.append(QuantumRegister(int(math.log2(num_data)), 'i'))
-        regs.append(QuantumRegister(int(math.log2(dim_data)), 'xi'))
+        regs.append(QuantumRegister(num_index_qubits, 'i'))
+        regs.append(QuantumRegister(num_data_qubits, 'xi'))
         regs.append(QuantumRegister(1, 'yi'))
         if ord==1:
-            regs.append(QuantumRegister(int(math.log2(dim_data)), 'xj'))
+            regs.append(QuantumRegister(num_data_qubits, 'xj'))
             regs.append(ClassicalRegister(2, 'c'))
         else:
-            regs.append(QuantumRegister(int(math.log2(num_data)), 'j'))
-            regs.append(QuantumRegister(int(math.log2(dim_data)), 'xj'))
+            regs.append(QuantumRegister(num_index_qubits, 'j'))
+            regs.append(QuantumRegister(num_data_qubits, 'xj'))
             regs.append(QuantumRegister(1, 'yj'))
             regs.append(ClassicalRegister(3, 'c'))
         super().__init__(*regs)
@@ -58,7 +58,7 @@ class QASVM_circuit(QuantumCircuit):
             if training_label[ctrl_state]<0.5:
                 self.append(XGate().control(len(ctrl_q), ctrl_state=ctrl_state), qargs=list(ctrl_q)+list(target_y))
 
-    def X_encode(self, feature_map, feature_map_params, testdata:Union[np.ndarray, ParameterVector, List[Parameter]], reg:str='xj'):
+    def X_encode(self, feature_map:QuantumCircuit, feature_map_params, testdata:Union[np.ndarray, ParameterVector, List[Parameter]], reg:str='xj'):
         feature_map_param_dict = {p:v for p, v in zip(feature_map_params, testdata)}
         self.compose(feature_map.assign_parameters(feature_map_param_dict), qubits=list(self._reg_dict[reg]), inplace=True)
 
@@ -87,7 +87,7 @@ class Bloch_sphere_QASVM_circuit(QASVM_circuit):
         self.ucrz([phi for phi in training_data[:,1]], ctrl_q, target_q)
         self.ucrx(list(np.where(training_label>0.5, 0, np.pi)), ctrl_q, target_y)
 
-    def X_encode(self, feature_map, feature_map_params, testdata:Union[np.ndarray, ParameterVector, List[Parameter]], reg:str='xj'):
+    def X_encode(self, feature_map:QuantumCircuit, feature_map_params, testdata:Union[np.ndarray, ParameterVector, List[Parameter]], reg:str='xj'):
         if feature_map is not None:
             logger.warning("ignoring {:} for {:} is not using it.".format('feature_map', self.__class__.__name__))
         if feature_map_params is not None:
@@ -122,3 +122,33 @@ _CIRCUIT_CLASS_DICT = {
     'Bloch_uniform': Bloch_uniform_QASVM_circuit,
     '_uc': _uc_QASVM_circuit
 }
+
+class AnsatzCircuit9(QuantumCircuit):
+    """ ref : https://arxiv.org/pdf/1905.10876.pdf """
+    def __init__(self, n, reps:int=3, rotational_block:str='rx', entangling_block:str='cz', parameter_prefix:str='θ'):
+        pv = ParameterVector(parameter_prefix, length=n*reps)
+        super().__init__(n, name='Circuit # 9')
+        k = 0
+        for i in range(reps):
+            self.h(range(n))
+            for j in range(n-1):
+                if entangling_block=='cz':
+                    self.cz(j, j+1)
+                elif entangling_block=='cx':
+                    self.cx(j, j+1)
+                elif entangling_block=='cy':
+                    self.cy(j, j+1)
+                else:
+                    raise NameError()
+            for l in range(n):
+                if rotational_block=='rx':
+                    self.rx(pv[k], l)
+                    k+=1
+                elif rotational_block=='ry':
+                    self.ry(pv[k], l)
+                    k+=1
+                elif rotational_block=='rz':
+                    self.rz(pv[k], l)
+                    k+=1
+                else:
+                    raise NameError()
