@@ -92,11 +92,38 @@ class CostParamStorage(BaseStorage):
             raise ValueError(f'No such method as {method}')
         return g
 
-    def last_avg(self, last:int):
-        return self.data[self.data.columns[1:-3]][-last:].mean(axis=0).to_numpy()
+    def last_avg(self, last:int, ignore_rejected:bool=False):
+        if not ignore_rejected:
+            df = self.data
+        else:
+            df = self.data[self.data['Accepted']==True]
+        return df[df.columns[1:-3]][-last:].mean(axis=0).to_numpy()
 
-    def last_std(self, last:int):
-        return self.data[self.data.columns[1:-3]][-last:].std(axis=0).to_numpy()
+    def last_std(self, last:int, ignore_rejected:bool=False):
+        if not ignore_rejected:
+            df = self.data
+        else:
+            df = self.data[self.data['Accepted']==True]
+        return df[df.columns[1:-3]][-last:].std(axis=0).to_numpy()
+
+    def last_cost_avg(self, last:int, ignore_rejected:bool=False):
+        if not ignore_rejected:
+            df = self.data
+        else:
+            df = self.data[self.data['Accepted']==True]
+        return df['Cost'][-last:].mean()
+
+    def last_cost_std(self, last:int, ignore_rejected:bool=False):
+        if not ignore_rejected:
+            df = self.data
+        else:
+            df = self.data[self.data['Accepted']==True]
+        return df['Cost'][-last:].std()
+
+    def num_accepted(self):
+        df = self.data[self.data['Accepted']==True]
+        return len(df)
+
 
 class BaseStopping(CallBack):
     pass
