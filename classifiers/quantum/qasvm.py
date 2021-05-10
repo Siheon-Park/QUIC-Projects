@@ -45,10 +45,18 @@ class QASVM(QuantumClassifier):
                 C:float = 1, k:float = 0.1, option:Union[str, Any]='Bloch_sphere',
                 var_form: Optional[QuantumCircuit] = None,
                 feature_map: Optional[QuantumCircuit] = None,
-                initial_point: Optional[np.ndarray] = None
+                initial_point: Optional[np.ndarray] = None,
+                num_data_qubits=None, num_index_qubits=None
                      ) -> None:
         super().__init__(data, label)
-
+        if num_data_qubits is None:
+            self.num_data_qubits = int(np.log2(self.dim_data))
+        else:
+            self.num_data_qubits = num_data_qubits
+        if num_index_qubits is None:
+            self.num_index_qubits = int(np.log2(self.num_data))
+        else:
+            self.num_index_qubits = num_index_qubits
         # initials
         self.C = C
         self.k = k
@@ -234,11 +242,15 @@ class QASVM(QuantumClassifier):
         assert isinstance(tf, bool)
 
         if tf:
-            _temp = self.quantum_instance.compile_config['initial_layout']
-            self.quantum_instance.compile_config['initial_layout'] = _temp._layout_for_first_order_circuit
-            self.transpiled_first_order_circuit = self.quantum_instance.transpile(self.naive_first_order_circuit)[0]
-            self.quantum_instance.compile_config['initial_layout'] = _temp
-            self.transpiled_second_order_circuit = self.quantum_instance.transpile(self.naive_second_order_circuit)[0]
+            if self.quantum_instance.compile_config['initial_layout'] is not None:
+                _temp = self.quantum_instance.compile_config['initial_layout']
+                self.quantum_instance.compile_config['initial_layout'] = _temp._layout_for_first_order_circuit
+                self.transpiled_first_order_circuit = self.quantum_instance.transpile(self.naive_first_order_circuit)[0]
+                self.quantum_instance.compile_config['initial_layout'] = _temp
+                self.transpiled_second_order_circuit = self.quantum_instance.transpile(self.naive_second_order_circuit)[0]
+            else:
+                self.transpiled_first_order_circuit = self.quantum_instance.transpile(self.naive_first_order_circuit)[0]
+                self.transpiled_second_order_circuit = self.quantum_instance.transpile(self.naive_second_order_circuit)[0]
         else:
             self.transpiled_first_order_circuit = None
             self.transpiled_second_order_circuit = None
@@ -388,14 +400,17 @@ class QASVM(QuantumClassifier):
         """ setting first and second order circuits and transpile if needed. """
         self.naive_second_order_circuit = self._construct_second_order_circuit()
         self.naive_first_order_circuit = self._construct_firt_order_circuit()
-        if 'ibmq' not in self.quantum_instance.backend_name:
+        if 'ibmq_qasm_simulator' in self.quantum_instance.backend_name:
             self.had_transpiled = False
-        else:
+        elif 'ibmq' in self.quantum_instance.backend_name:
             self.had_transpiled = True
+        else:
+            self.had_transpiled = False
+
 
     def _construct_firt_order_circuit(self):
         """ constructor of first-order-circuit where var_form parameters are 'theta', feature_map parameters are 'X'."""
-        qc = self.circuit_class(self.num_data, self.dim_data, ord=1)
+        qc:QASVM_circuit = self.circuit_class(self.num_index_qubits, self.num_data_qubits, ord=1)
         qc.add_var_form(self.var_form)
         qc.UD_encode(self.feature_map, self._feature_map_params, training_data=self.data, training_label=self.label, N=self.num_data)
         qc.X_encode(self.feature_map, self._feature_map_params, testdata=self._feature_map_params)
@@ -405,7 +420,7 @@ class QASVM(QuantumClassifier):
     
     def _construct_second_order_circuit(self):
         """ constructor of second-order-circuit where var_form parameters are 'theta_i', 'theta_j'. No feature_map parameters"""
-        qc = self.circuit_class(self.num_data, self.dim_data, ord=2)
+        qc:QASVM_circuit = self.circuit_class(self.num_index_qubits, self.num_data_qubits, ord=2)
         if self.var_form is not None:
             qc.add_var_form(self.var_form.assign_parameters(dict(zip(self._var_form_params['0'], self._var_form_params['i']))), reg='i')
             qc.add_var_form(self.var_form.assign_parameters(dict(zip(self._var_form_params['0'], self._var_form_params['j']))), reg='j')
