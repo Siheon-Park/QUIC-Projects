@@ -85,7 +85,7 @@ class Bloch_sphere_QASVM_circuit(QASVM_circuit):
         self.uc([U3Gate(theta, phi, 0).to_matrix() for theta, phi in training_data], ctrl_q, target_q, up_to_diagonal=True)
         #self.ucry([theta for theta in training_data[:,0]], ctrl_q, target_q)
         #self.ucrz([phi for phi in training_data[:,1]], ctrl_q, target_q)
-        #self.ucrx(list(np.where(training_label>0.5, 0, np.pi)), ctrl_q, target_y)
+        self.ucrx(list(np.where(training_label>0.5, 0, np.pi)), ctrl_q, target_y)
 
     def X_encode(self, feature_map:QuantumCircuit, feature_map_params, testdata:Union[np.ndarray, ParameterVector, List[Parameter]], reg:str='xj'):
         if feature_map is not None:
