@@ -146,3 +146,4 @@ def compare_svm_and_qasvm(svm, qasvm, repeat_for_qasvm:int=10):
     plt.ylabel('f')
     plt.legend()
     plt.grid()
+    return res
