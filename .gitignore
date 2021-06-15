@@ -24,3 +24,4 @@ homework
 tutorials
 *.m
 sample_notebook.ipynb
+.idea
