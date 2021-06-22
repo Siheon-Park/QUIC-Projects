@@ -13,6 +13,7 @@ from qiskit.algorithms.optimizers.spsa import CALLBACK
 
 logger = logging.getLogger(__name__)
 
+
 class SPSA(new_SPSA):
     """Simultaneous Perturbation Stochastic Approximation (SPSA) optimizer.
 
@@ -53,7 +54,8 @@ class SPSA(new_SPSA):
         Small Molecules and Quantum Magnets. Nature 549, pages242–246(2017).
         `arXiv:1704.05018v2 <https://arxiv.org/pdf/1704.05018v2.pdf#section*.11>`_
 
-    """    
+    """
+
     def __init__(self,
                  model: QASVM,
                  blocking: bool = False,
@@ -96,12 +98,13 @@ class SPSA(new_SPSA):
         except ArithmeticError as e:
             raise AttributeError(e, "'parameters' should be Union[np.ndarray, Dict[Parameter, float], ParameterDict]")
         self.model = model
-        super().__init__(blocking=blocking, allowed_increase=allowed_increase, trust_region=trust_region, learning_rate=learning_rate, perturbation=perturbation, perturbation_dims=perturbation_dims, resamplings=resamplings)
+        super().__init__(blocking=blocking, allowed_increase=allowed_increase, trust_region=trust_region,
+                         learning_rate=learning_rate, perturbation=perturbation, perturbation_dims=perturbation_dims,
+                         resamplings=resamplings)
         del self.maxiter
         del self.last_avg
         self.fx = None
         self._prepare_optimization()
-
 
     def _prepare_optimization(self):
         # ensure learning rate and perturbation are correctly set: either none or both
@@ -135,7 +138,7 @@ class SPSA(new_SPSA):
 
         self.k = 0
 
-    def step(self, callback:CALLBACK=None):
+    def step(self, callback: CALLBACK = None):
         loss = self.model.cost_fn
         x = self.model.parameters
         # compute update
@@ -150,7 +153,7 @@ class SPSA(new_SPSA):
         # compute next parameter value
         update = update * next(self.eta)
         x_next = x - update
-        self.k+=1
+        self.k += 1
         # blocking
         if self.blocking:
             fx_next = loss(x_next)
@@ -159,10 +162,10 @@ class SPSA(new_SPSA):
             if self.fx + self.allowed_increase <= fx_next:  # accept only if self.model.cost_fn improved
                 if callback is not None:
                     callback(self.k,  # number of function evals
-                            x_next,  # next parameters
-                            fx_next,  # loss at next parameters
-                            np.linalg.norm(update),  # size of the update step
-                            False)  # not accepted
+                             x_next,  # next parameters
+                             fx_next,  # loss at next parameters
+                             np.linalg.norm(update),  # size of the update step
+                             False)  # not accepted
 
                 logger.info('Iteration %s rejected.', self.k)
                 return None
@@ -172,16 +175,16 @@ class SPSA(new_SPSA):
         if callback is not None:
             if self.fx is None:
                 callback(self.k,  # number of function evals
-                        x_next,  # next parameters
-                        loss,  # loss at next parameters
-                        np.linalg.norm(update),  # size of the update step
-                        True)  # accepted
+                         x_next,  # next parameters
+                         loss,  # loss at next parameters
+                         np.linalg.norm(update),  # size of the update step
+                         True)  # accepted
             else:
                 callback(self.k,  # number of function evals
-                        x_next,  # next parameters
-                        self.fx,  # loss at next parameters
-                        np.linalg.norm(update),  # size of the update step
-                        True)  # accepted
+                         x_next,  # next parameters
+                         self.fx,  # loss at next parameters
+                         np.linalg.norm(update),  # size of the update step
+                         True)  # accepted
         # update parameters
         self.model.parameters = x_next
         return None

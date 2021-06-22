@@ -7,7 +7,7 @@ from qiskit.aqua import AquaError
 from qiskit.transpiler import Layout
 from qiskit.providers.basebackend import BaseBackend
 from itertools import product
-from typing import Union, Dict
+from typing import Union, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class QuantumClassifier(Classifier):
 class Qasvm_Mapping_4x2(Layout):
     """ order: a, i0, i1, xi, yi, j0, j1, xj, yj """
 
-    def __init__(self, backend: Union[str, BaseBackend, dict] = None):
+    def __init__(self, backend: Union[str, BaseBackend, dict] = None, line_mapping: List[int] = None):
         if backend is None or isinstance(backend, dict):
             super().__init__(backend)
         else:
@@ -33,17 +33,22 @@ class Qasvm_Mapping_4x2(Layout):
                                  Qubit(QuantumRegister(2, 'j'), 1),
                                  Qubit(QuantumRegister(1, 'xj'), 0),
                                  Qubit(QuantumRegister(1, 'yj'), 0)]
-            if 'sydney' in self._backend_name:
-                self.updated_date = '2021/04/19 01:12'
-                self.prefered_mapping_order = [23, 15, 17, 21, 18, 26, 22, 24, 25]
-            elif 'toronto' in self._backend_name:
-                self.updated_date = '2021/06/12 20:17'
-                self.prefered_mapping_order = [14, 8, 5, 11, 3, 19, 22, 16, 25]
-            elif 'guadalupe' in self._backend_name:
-                self.updated_date = '2021/06/03 18:33'
-                self.prefered_mapping_order = [14, 9, 8, 11, 5, 15, 12, 13, 10]
+            if line_mapping is None:
+                if 'sydney' in self._backend_name:
+                    self.updated_date = '2021/04/19 01:12'
+                    self.prefered_mapping_order = [23, 15, 17, 21, 18, 26, 22, 24, 25]
+                elif 'toronto' in self._backend_name:
+                    self.updated_date = '2021/06/12 20:17'
+                    self.prefered_mapping_order = [14, 8, 5, 11, 3, 19, 22, 16, 25]
+                elif 'guadalupe' in self._backend_name:
+                    self.updated_date = '2021/06/03 18:33'
+                    self.prefered_mapping_order = [14, 9, 8, 11, 5, 15, 12, 13, 10]
+                else:
+                    raise QuantumError('No support for {:}'.format(self._backend_name))
             else:
-                raise QuantumError('No support for {:}'.format(self._backend_name))
+                l1 = list(map(lambda x: line_mapping[4-x], range(5)))
+                l2 = line_mapping[5:]
+                self.prefered_mapping_order = l1+l2
             super().__init__(dict(zip(self._QUBIT_LISTS, self.prefered_mapping_order)))
 
     @property
