@@ -157,8 +157,15 @@ class QASVM(QuantumClassifier):
         assert isinstance(tf, bool)
 
         if tf:
-            self.transpiled_first_order_circuit = self.quantum_instance.transpile(self.naive_first_order_circuit)[0]
-            self.transpiled_second_order_circuit = self.quantum_instance.transpile(self.naive_second_order_circuit)[0]
+            if self.quantum_instance.compile_config['initial_layout'] is not None:
+                _temp = self.quantum_instance.compile_config['initial_layout']
+                self.quantum_instance.compile_config['initial_layout'] = _temp._layout_for_first_order_circuit
+                self.transpiled_first_order_circuit = self.quantum_instance.transpile(self.naive_first_order_circuit)[0]
+                self.quantum_instance.compile_config['initial_layout'] = _temp
+                self.transpiled_second_order_circuit = self.quantum_instance.transpile(self.naive_second_order_circuit)[0]
+            else:
+                self.transpiled_first_order_circuit = self.quantum_instance.transpile(self.naive_first_order_circuit)[0]
+                self.transpiled_second_order_circuit = self.quantum_instance.transpile(self.naive_second_order_circuit)[0]
         else:
             self.transpiled_first_order_circuit = None
             self.transpiled_second_order_circuit = None
