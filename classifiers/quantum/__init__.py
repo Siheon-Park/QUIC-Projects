@@ -1,4 +1,5 @@
 import logging
+from abc import ABCMeta
 
 from .. import Classifier
 from qiskit.circuit import QuantumRegister
@@ -12,54 +13,63 @@ from typing import Union, Dict, List
 logger = logging.getLogger(__name__)
 
 
-class QuantumClassifier(Classifier):
+class QuantumClassifier(Classifier, metaclass=ABCMeta):
     pass
 
 
 class Qasvm_Mapping_4x2(Layout):
-    """ order: a, i0, i1, xi, yi, j0, j1, xj, yj """
+    """ Layout subclass to fed into QuantumInstance.initial_layout"""
 
-    def __init__(self, backend: Union[str, BaseBackend, dict] = None, line_mapping: List[int] = None):
+    def __init__(self, backend: Union[str, BaseBackend, dict] = None, **qubits: dict):
         if backend is None or isinstance(backend, dict):
             super().__init__(backend)
         else:
-            self._backend_name = backend if isinstance(backend, str) else backend.name()
-            self._QUBIT_LISTS = [Qubit(QuantumRegister(1, 'a'), 0),
-                                 Qubit(QuantumRegister(2, 'i'), 0),
-                                 Qubit(QuantumRegister(2, 'i'), 1),
-                                 Qubit(QuantumRegister(1, 'xi'), 0),
-                                 Qubit(QuantumRegister(1, 'yi'), 0),
-                                 Qubit(QuantumRegister(2, 'j'), 0),
-                                 Qubit(QuantumRegister(2, 'j'), 1),
-                                 Qubit(QuantumRegister(1, 'xj'), 0),
-                                 Qubit(QuantumRegister(1, 'yj'), 0)]
-            if line_mapping is None:
-                if 'sydney' in self._backend_name:
-                    self.updated_date = '2021/04/19 01:12'
-                    self.prefered_mapping_order = [23, 15, 17, 21, 18, 26, 22, 24, 25]
-                elif 'toronto' in self._backend_name:
-                    self.updated_date = '2021/06/12 20:17'
-                    self.prefered_mapping_order = [14, 8, 5, 11, 3, 19, 22, 16, 25]
-                elif 'guadalupe' in self._backend_name:
-                    self.updated_date = '2021/06/03 18:33'
-                    self.prefered_mapping_order = [14, 9, 8, 11, 5, 15, 12, 13, 10]
-                else:
-                    raise QuantumError('No support for {:}'.format(self._backend_name))
-            else:
-                l1 = list(map(lambda x: line_mapping[4-x], range(5)))
-                l2 = line_mapping[5:]
-                self.prefered_mapping_order = l1+l2
-            super().__init__(dict(zip(self._QUBIT_LISTS, self.prefered_mapping_order)))
+            a = Qubit(QuantumRegister(1, 'a'), 0)
+            i0 = Qubit(QuantumRegister(2, 'i'), 0)
+            i1 = Qubit(QuantumRegister(2, 'i'), 1)
+            xi = Qubit(QuantumRegister(1, 'xi'), 0)
+            yi = Qubit(QuantumRegister(1, 'yi'), 0)
+            j0 = Qubit(QuantumRegister(2, 'j'), 0)
+            j1 = Qubit(QuantumRegister(2, 'j'), 1)
+            xj = Qubit(QuantumRegister(1, 'xj'), 0)
+            yj = Qubit(QuantumRegister(1, 'yj'), 0)
+            config = backend.configuration()
+            if config.n_qubits < 9:
+                raise QuantumError(f'At least 9 qubits required, but the backend has {config.n_qubits} qubits')
+            if len(qubits) > 9:
+                raise QuantumError(f'Specify 9 qubits instead of {len(qubits)}')
+            try:
+                second_dict = dict()
+                first_dict = dict()
+                second_dict[qubits['a']] = a
+                second_dict[qubits['i0']] = i0
+                second_dict[qubits['i1']] = i1
+                second_dict[qubits['xi']] = xi
+                second_dict[qubits['yi']] = yi
+                second_dict[qubits['j0']] = j0
+                second_dict[qubits['j1']] = j1
+                second_dict[qubits['xj']] = xj
+                second_dict[qubits['yj']] = yj
+
+                first_dict[qubits['a']] = a
+                first_dict[qubits['i0']] = i0
+                first_dict[qubits['i1']] = i1
+                first_dict[qubits['xi']] = xi
+                first_dict[qubits['yi']] = yi
+                first_dict[qubits['xj']] = xj
+            except KeyError as e:
+                raise QuantumError(f"Qubit name '{e}' is missing.")
+            self.second_dict = second_dict
+            self.first_dict = first_dict
+            super().__init__(self.second_dict)
 
     @property
     def _layout_for_first_order_circuit(self):
-        _vqs = self._QUBIT_LISTS[:5] + self._QUBIT_LISTS[7:8]
-        _pqs = self.prefered_mapping_order[:5] + self.prefered_mapping_order[7:8]
-        return Qasvm_Mapping_4x2(dict(zip(_vqs, _pqs)))
+        return self.first_dict
 
 
 def postprocess_Z_expectation(n: int, dic: Dict[str, float], *count):
-    ''' interpretation of qiskit result. a.k.a. parity of given qubits 'count' '''
+    """ interpretation of qiskit result. a.k.a. parity of given qubits 'count' """
     temp = 0
     for binary in product((0, 1), repeat=n):
         val1 = (-1) ** sum([binary[c] for c in count])
