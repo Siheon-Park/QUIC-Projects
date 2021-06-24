@@ -1,89 +1,134 @@
+from abc import ABC, abstractmethod, ABCMeta
 from typing import Callable
 
-import numpy as np
+from pandas import DataFrame, melt
 from matplotlib import pyplot as plt
+from seaborn import relplot, lineplot, scatterplot
 
 from torch.utils.tensorboard import SummaryWriter
 
 from . import Classifier
 
-class CallBack(object):
-    def __init__(self) -> None:
-        super().__init__()
+
+class CallBack(ABC):
+    @abstractmethod
+    def __call__(self):
+        raise NotImplementedError
+
 
 CallBack.save = Classifier.save
 
-class BaseStorage(CallBack):
-    def __init__(self, writer: SummaryWriter) -> None:
+
+class BaseStorage(CallBack, metaclass=ABCMeta):
+    def __init__(self) -> None:
         super().__init__()
-        self.writer=writer
+        self.data = DataFrame()
 
     def clear(self):
-        for attr, value in self.__dict__.items():
-            if isinstance(value, dict):
-                self.__setattr__(attr, {})
+        del self.data
+        self.data = DataFrame()
 
-class SimpleStorage(BaseStorage):
+
+# noinspection PyMethodOverriding
+class CostParamStorage(BaseStorage):
     """ saves simply costs and params"""
-    def __init__(self, writer:SummaryWriter=None) -> None:
-        super().__init__(writer)
-        self.params = {}
-        self.costs = {}
 
-    def __call__(self, *args, **kwargs):
-        k, cost, theta = args[:3]
+    def __init__(self, interval: int = 1) -> None:
+        super().__init__()
+        self.interval = interval
+
+    def __call__(self, k, parameters, cost, step_size, isaccepted):
+        """Args: k, parameters, cost, step_size, isaccepted"""
+        if k % self.interval != 0:
+            cost = None
         if isinstance(cost, Callable):
-            cost = cost(theta)
-        self.params[k] = theta
-        self.costs[k] = cost
-        if self.writer is not None:
-            self.writer.add_scalar('Cost', cost, k)
-            self.writer.add_scalars('Parameters', dict(zip(map(str, range(len(theta))), theta)), k)
+            cost = cost(parameters)
 
-    def plot_params(self):
-        params = np.array(list(self.params.values()))
-        steps = np.array(list(self.params.keys()))
-        [plt.plot(steps, params[:,i], label=f'parameter {i}') for i in range(params.shape[1])]
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.xlim([min(steps), max(steps)])
-        plt.yticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi], ['-$\pi$', '-$\pi/2$', '$0$', '$\pi/2$', '$\pi$'])
-        plt.xlabel('steps')
-        plt.ylabel('param value')
+        if isinstance(parameters, dict):
+            _temp_dict = dict(zip(map(str, parameters.keys()), parameters.values()))
+        else:
+            _temp_dict = dict(zip(map(str, range(len(parameters))), parameters))
+        _temp_dict2 = dict(Step=k)
+        _temp_dict2.update(_temp_dict)
+        _temp_dict2['Cost'] = cost
+        _temp_dict2['Step Size'] = step_size
+        _temp_dict2['Accepted'] = isaccepted
+        self.data = self.data.append(DataFrame(_temp_dict2, index=[k]), ignore_index=False).sort_index()
+
+    def add_writer(self, writer: SummaryWriter):
+        k = self.data['Step'].iloc[-1]
+        _temp_dict = self.data[self.data.columns[1:-3]].iloc[-1].to_dict()
+        cost = self.data['Cost'].iloc[-1]
+        isaccepted = self.data['Accepted'].iloc[-1]
+        if cost is not None:
+            writer.add_scalar('Cost', cost, k)
+            writer.add_scalars('Parameters', _temp_dict, k)
+            if isaccepted:
+                writer.add_scalar('Cost(accepted)', cost, k)
+                writer.add_scalars('Parameters(accepted)', _temp_dict, k)
+
+    def plot_params(self, title: str = 'Parameters', ylabel: str = 'Value', method: str = 'relplot', ax=None, **kwargs):
+        df = melt(self.data, id_vars=['Step', 'Accepted'], value_vars=self.data.columns[1:-3], var_name=title,
+                  value_name=ylabel)
+        if method == 'relplot':
+            g = relplot(data=df, x='Step', y=ylabel, hue=title, style="Accepted", style_order=[True, False], **kwargs)
+        elif method == 'mpl':
+            if ax is None:
+                ax = plt.gca()
+            lineplot(data=df[df['Accepted'] == True], x='Step', y=ylabel, hue=title, style_order=[True, False], ax=ax,
+                     legend=True, **kwargs)
+            scatterplot(data=df[df['Accepted'] == False], x='Step', y=ylabel, hue=title, style="Accepted",
+                        style_order=[True, False], ax=ax, legend=False, **kwargs)
+            g = ax
+        else:
+            raise ValueError(f'No such method as {method}')
         plt.grid()
 
-    def plot(self):
-        cost = np.array(list(self.costs.values()))
-        steps = np.array(list(self.params.keys()))
-        plt.plot(steps[0:], cost[0:], label='obj val', c='k', linewidth=0.5)
-        plt.grid()
-        plt.legend()
+        return g
 
-class SimplePMStorage(SimpleStorage):
-    """ saves simply costs and params"""
-    def __init__(self, writer:SummaryWriter=None) -> None:
-        super().__init__(writer)
-        self.params_pm = {}
-        self.costs_pm = {}
+    def plot(self, method: str = 'relplot', ax=None, **kwargs):
+        if method == 'relplot':
+            g = relplot(data=self.data, x='Step', y='Cost', style='Accepted', style_order=[True, False], **kwargs)
+        elif method == 'mpl':
+            if ax is None:
+                ax = plt.gca()
+            lineplot(data=self.data[self.data['Accepted'] == True], x='Step', y='Cost', style='Accepted', ax=ax,
+                     legend=True, **kwargs)
+            scatterplot(data=self.data[self.data['Accepted'] == False], x='Step', y='Cost', style='Accepted', ax=ax,
+                        legend=True, **kwargs)
+            g = ax
+        else:
+            raise ValueError(f'No such method as {method}')
+        return g
 
-    def __call__(self, *args, **kwargs):
-        k, cost, theta, cost_plus, cost_minus, theta_plus, theta_minus = args[:7]
-        super().__call__(k, cost, theta)
-        if isinstance(cost_plus, Callable):
-            cost_plus = cost_plus(theta_plus)
-        if isinstance(cost_minus, Callable):
-            cost_minus = cost_minus(theta_minus)
-        self.params_pm[k] = [theta_minus, theta_plus]
-        self.costs_pm[k] = [cost_minus, cost_plus]
-        if self.writer is not None:
-            self.writer.add_scalar('Cost/+', cost_plus, k)
-            self.writer.add_scalar('Cost/-', cost_minus, k)
+    def last_avg(self, last: int, ignore_rejected: bool = False):
+        if not ignore_rejected:
+            df = self.data
+        else:
+            df = self.data[self.data['Accepted'] == True]
+        return df[df.columns[1:-3]][-last:].mean(axis=0).to_numpy()
 
-    def plot(self):
-        cost_pm = np.array(list(self.costs_pm.values()))
-        cost = np.array(list(self.costs.values()))
-        steps = np.array(list(self.params.keys()))
-        plt.scatter(steps[0:], cost_pm[0:][:,0], label='t-', c='b', s=1)
-        plt.scatter(steps[0:], cost_pm[0:][:,1], label='t+', c='r', s=1)
-        plt.plot(steps[0:], cost[0:], label='t0', c='k', linewidth=0.5)
-        plt.grid()
-        plt.legend()
+    def last_std(self, last: int, ignore_rejected: bool = False):
+        if not ignore_rejected:
+            df = self.data
+        else:
+            df = self.data[self.data['Accepted'] == True]
+        return df[df.columns[1:-3]][-last:].std(axis=0).to_numpy()
+
+    def last_cost_avg(self, last: int, ignore_rejected: bool = False):
+        if not ignore_rejected:
+            df = self.data
+        else:
+            df = self.data[self.data['Accepted'] == True]
+        return df['Cost'][-last:].mean()
+
+    def last_cost_std(self, last: int, ignore_rejected: bool = False):
+        if not ignore_rejected:
+            df = self.data
+        else:
+            df = self.data[self.data['Accepted'] == True]
+        return df['Cost'][-last:].std()
+
+    def num_accepted(self):
+        df = self.data[self.data['Accepted'] == True]
+        return len(df)
