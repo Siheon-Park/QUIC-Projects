@@ -1,7 +1,10 @@
+from abc import ABCMeta
 from .. import Classifier
 
-class ConvexClassifier(Classifier):
+
+class ConvexClassifier(Classifier, metaclass=ABCMeta):
     pass
+
 
 class ConvexError(BaseException):
     def __init__(self, *message: object) -> None:

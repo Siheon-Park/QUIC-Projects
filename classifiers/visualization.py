@@ -2,17 +2,15 @@ from matplotlib import pyplot as plt
 import numpy as np
 import re
 import pathlib
-from itertools import product
-from typing import Union, Optional, Dict, List, Callable
-from .quantum.qasvm import QASVM
 from .utils import tsne
 
+
 class Plot_Log_From_SPSA(object):
-    def __init__(self, logfile:pathlib.Path=None) -> None:
+    def __init__(self, logfile: pathlib.Path = None) -> None:
         super().__init__()
         if logfile is None:
-            q = pathlib.Path.home()/ 'QUIC-Projects' / 'exp_logs'
-            logfile = max(q.glob('*.log'), key=lambda q: q.stat().st_ctime)
+            q = pathlib.Path.home() / 'QUIC-Projects' / 'exp_logs'
+            logfile = max(q.glob('*.log'), key=lambda x: x.stat().st_ctime)
         self.logfile = logfile
         self.theta_plus_re = re.compile('Objective function at theta[+] for step # \d+: -?\d+[.]\d+')
         self.theta_minus_re = re.compile('Objective function at theta[-] for step # \d+: -?\d+[.]\d+')
@@ -43,20 +41,22 @@ class Plot_Log_From_SPSA(object):
         mval = np.array(list(self.theta_minus_dict.values()))
         min_step = kwargs.get('min_step', 0)
         max_step = kwargs.get('max_step', max(psteps))
-        pind = (psteps>=min_step)*(psteps<=max_step)
-        mind = (msteps>=min_step)*(msteps<=max_step)
+        pind = (psteps >= min_step) * (psteps <= max_step)
+        mind = (msteps >= min_step) * (msteps <= max_step)
         plt.scatter(psteps[pind], pval[pind], label='θ+', c='b', s=1)
         plt.scatter(msteps[mind], mval[mind], label='θ-', c='r', s=1)
         plt.legend()
         plt.grid()
         plt.title(kwargs.get('title', 'SPSA optimization'))
 
+
+# noinspection PyUnresolvedReferences
 class Plot_SVM(object):
     def __init__(self, cls) -> None:
         super().__init__()
         self.cls = cls
 
-    def plot(self, option:str='sv', ax=plt, a = (0,1), *args, **kwargs):
+    def plot(self, option: str = 'sv', ax=plt, a=(0, 1), *args, **kwargs):
         if 'tsne' in option:
             data = tsne(self.cls.data, kwargs.get('perp', 30), kwargs.get('seed', 0))
             a = (0, 1)
@@ -64,16 +64,17 @@ class Plot_SVM(object):
             data = self.cls.data
 
         if 'data' in option:
-            ax.scatter(data[:,a[0]], data[:,a[1]], c=self.cls.label, *args, **kwargs)
+            ax.scatter(data[:, a[0]], data[:, a[1]], c=self.cls.label, *args, **kwargs)
         elif 'sv' in option:
             if 'cmap' not in kwargs:
                 kwargs['cmap'] = plt.cm.coolwarm
             support_vector = data[self.cls.support_]
-            ax.scatter(data[:,a[0]], data[:,a[1]], c=self.cls.label, cmap = plt.cm.coolwarm)
-            ax.scatter(support_vector[:,a[0]], support_vector[:,a[1]], s=100, linewidth=1.0, edgecolors='k', facecolors='none')
+            ax.scatter(data[:, a[0]], data[:, a[1]], c=self.cls.label, cmap=plt.cm.coolwarm)
+            ax.scatter(support_vector[:, a[0]], support_vector[:, a[1]], s=100, linewidth=1.0, edgecolors='k',
+                       facecolors='none')
         elif 'density' in option:
-            sc = ax.scatter(data[:,a[0]], data[:,a[1]], c=self.cls.alpha*self.cls.label, *args, **kwargs)
-            if ax==plt:
+            sc = ax.scatter(data[:, a[0]], data[:, a[1]], c=self.cls.alpha * self.cls.label, *args, **kwargs)
+            if ax == plt:
                 plt.colorbar()
             else:
                 plt.colorbar(sc, ax=ax)
@@ -83,37 +84,37 @@ class Plot_SVM(object):
         else:
             raise ValueError('invalid option')
 
-        if ax==plt:
+        if ax == plt:
             ax.title(f'{self.cls.name}')
         else:
             ax.set_title(f'{self.cls.name}')
         ax.grid()
 
-    def plot_boundary(self, ax=plt, plot_data:bool=True, fig=None, color_setting:dict={}):
-        assert self.cls.data.shape[1]==2
-        xx = np.linspace(min(self.cls.data[:,0]), max(self.cls.data[:,0]), 100)
-        yy = np.linspace(min(self.cls.data[:,1]), max(self.cls.data[:,1]), 10)
+    def plot_boundary(self, ax=plt, plot_data: bool = True, fig=None, color_setting: dict = None):
+        assert self.cls.data.shape[1] == 2
+        xx = np.linspace(min(self.cls.data[:, 0]), max(self.cls.data[:, 0]), 100)
+        yy = np.linspace(min(self.cls.data[:, 1]), max(self.cls.data[:, 1]), 10)
         XX, YY = np.meshgrid(xx, yy)
         xxx = XX.flatten()
         yyy = YY.flatten()
-        zzz = self.cls.f(np.vstack((xxx,yyy)).T)
+        zzz = self.cls.f(np.vstack((xxx, yyy)).T)
         ZZ = zzz.reshape(XX.shape)
-        c1 = min(np.abs(self.cls.f(self.cls.data[self.cls.polary>0])))
-        c2 = -min(np.abs(self.cls.f(self.cls.data[self.cls.polary<0])))
-        if not color_setting:
-            cdict = {-1:'b', 0:'k', 1:'r', c1:'m', c2:'c'}
+        c1 = min(np.abs(self.cls.f(self.cls.data[self.cls.polary > 0])))
+        c2 = -min(np.abs(self.cls.f(self.cls.data[self.cls.polary < 0])))
+        if color_setting is None:
+            cdict = {-1: 'b', 0: 'k', 1: 'r', c1: 'm', c2: 'c'}
         else:
             cdict = {}
-            for k,v in color_setting.items():
-                if k=='c1':
+            for k, v in color_setting.items():
+                if k == 'c1':
                     cdict[c1] = v
-                elif k=='c2':
+                elif k == 'c2':
                     cdict[c2] = v
                 else:
                     cdict[k] = v
         levels = dict(sorted(cdict.items()))
         CS = ax.contour(XX, YY, ZZ, levels=tuple(levels.keys()), colors=tuple(levels.values()))
-        PS = ax.contourf(XX, YY, ZZ, levels = 100, cmap='RdBu')
+        PS = ax.contourf(XX, YY, ZZ, levels=100, cmap='RdBu')
         ax.clabel(CS, inline=1, fontsize=20)
         if fig is None:
             ax.colorbar(PS)
@@ -122,26 +123,28 @@ class Plot_SVM(object):
         if plot_data:
             self.plot('sv', ax=ax)
 
+
 class Plot_Data(object):
-    def __init__(self, X:np.ndarray, y:np.ndarray) -> None:
+    def __init__(self, X: np.ndarray, y: np.ndarray) -> None:
         super().__init__()
         self.data = X
         self.label = y
 
     def plot(self, ax=plt, a=(0, 1), *args, **kwargs):
-        ax.scatter(self.data[:,a[0]], self.data[:,a[1]], c=self.label, cmap='RdBu', *args, **kwargs)
-        if ax==plt:
+        ax.scatter(self.data[:, a[0]], self.data[:, a[1]], c=self.label, cmap='RdBu', *args, **kwargs)
+        if ax == plt:
             ax.title('Data Distribution')
         else:
             ax.set_title('Data Distribution')
         ax.grid()
 
-def compare_svm_and_qasvm(svm, qasvm, repeat_for_qasvm:int=10):
+
+def compare_svm_and_qasvm(svm, qasvm, repeat_for_qasvm: int = 10):
     assert svm.num_data == qasvm.num_data
     assert 'QASVM' in svm.mutation
     plt.plot(svm.f(svm.data), label='sim')
     res = np.array([qasvm.f(qasvm.data) for _ in range(repeat_for_qasvm)])
-    plt.errorbar(range(len(res.mean(axis=0))), res.mean(axis=0), yerr=2*res.std(axis=0), label='qasvm')
+    plt.errorbar(range(len(res.mean(axis=0))), res.mean(axis=0), yerr=2 * res.std(axis=0), label='qasvm')
     plt.xticks(range(svm.num_data), [f'Data {i}' for i in range(svm.num_data)])
     plt.ylabel('f')
     plt.legend()

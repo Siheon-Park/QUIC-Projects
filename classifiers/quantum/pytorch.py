@@ -8,10 +8,12 @@ from .qasvm import QASVM
 
 logger = logging.getLogger(__name__)
 
+
+# noinspection PyMethodOverriding
 class GeneralFunction(Function):
 
     @staticmethod
-    def forward(ctx, params, cost_fn:Callable, grad_fn:Callable):
+    def forward(ctx, params, cost_fn: Callable, grad_fn: Callable):
         ctx.cost_fn = cost_fn
         ctx.grad_fn = grad_fn
         evaluation = torch.tensor([ctx.cost_fn(params.tolist())])
@@ -26,15 +28,17 @@ class GeneralFunction(Function):
             gradients = ctx.grad_fn(params.tolist())
         else:
             input_list = np.array(params.tolist())
-            input_list_rights = input_list + 1e-3*np.eye(len(input_list))
-            input_list_lefts = input_list + 1e-3*np.eye(len(input_list))
+            input_list_rights = input_list + 1e-3 * np.eye(len(input_list))
+            input_list_lefts = input_list + 1e-3 * np.eye(len(input_list))
 
-            gradients = (np.array(list(map(ctx.cost_fn, input_list_rights))) - np.array(list(map(ctx.cost_fn, input_list_lefts))))/(2*1e-3)
+            gradients = (np.array(list(map(ctx.cost_fn, input_list_rights))) - np.array(
+                list(map(ctx.cost_fn, input_list_lefts)))) / (2 * 1e-3)
 
         return grad_output * gradients, None, None
 
+
 class QASVM_model(nn.Module):
-    def __init__(self, qasvm:QASVM) -> None:
+    def __init__(self, qasvm: QASVM) -> None:
         super().__init__()
         self.qasvm = qasvm
         if self.qasvm.initial_point is not None:
@@ -44,4 +48,3 @@ class QASVM_model(nn.Module):
 
     def forward(self):
         return GeneralFunction.apply(self.params, self.qasvm.cost_fn, self.qasvm.grad_fn)
-

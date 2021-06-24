@@ -1,13 +1,11 @@
-from abc import ABC, abstractmethod
-from typing import Callable, Union
+from abc import ABC, abstractmethod, ABCMeta
+from typing import Callable
 
-import numpy as np
 from pandas import DataFrame, melt
 from matplotlib import pyplot as plt
 from seaborn import relplot, lineplot, scatterplot
 
 from torch.utils.tensorboard import SummaryWriter
-import logging
 
 from . import Classifier
 
@@ -21,7 +19,7 @@ class CallBack(ABC):
 CallBack.save = Classifier.save
 
 
-class BaseStorage(CallBack):
+class BaseStorage(CallBack, metaclass=ABCMeta):
     def __init__(self) -> None:
         super().__init__()
         self.data = DataFrame()
@@ -31,6 +29,8 @@ class BaseStorage(CallBack):
         self.data = DataFrame()
 
 
+# noinspection PyMethodOverriding
+# noinspection SpellCheckingInspection
 class CostParamStorage(BaseStorage):
     """ saves simply costs and params"""
 
@@ -133,60 +133,3 @@ class CostParamStorage(BaseStorage):
     def num_accepted(self):
         df = self.data[self.data['Accepted'] == True]
         return len(df)
-
-
-class BaseStopping(CallBack):
-    pass
-
-
-class ParamsStopping(BaseStopping):
-    def __init__(self, last_avg: int = 30, patiance: int = None, tol: float = 1e-2) -> None:
-        if patiance is None:
-            patiance = last_avg
-        assert patiance >= 0
-        assert last_avg >= 2
-        assert tol > 0
-        super().__init__()
-        self.watch_list = DataFrame()
-        self.patiance = patiance
-        self.last_avg = last_avg
-        self.tol = tol
-        self._FLAG = -1
-        self.best_params = None
-
-    def __call__(self, params: Union[np.ndarray, dict], step: int):
-        if isinstance(params, dict):
-            _temp_dict = dict(zip(map(str, params.keys()), params.values()))
-        else:
-            _temp_dict = dict(zip(map(str, range(len(params))), params))
-        if step % self.last_avg not in self.watch_list.index:
-            self.watch_list = self.watch_list.append(DataFrame(_temp_dict, index=[step % self.last_avg]),
-                                                     ignore_index=False)
-        else:
-            self.watch_list.loc[[step % self.last_avg]] = DataFrame(_temp_dict, index=[step % self.last_avg])
-        self.best_params = self.watch_list.mean(axis=0).to_numpy()
-        if len(self.watch_list) >= self.last_avg:
-            if (self.watch_list.std(axis=0) < self.tol).all():
-                self._FLAG += 1
-                if self._FLAG == self.patiance:
-                    return True
-        return False
-
-
-class BaseJobCallback(CallBack):
-    pass
-
-
-class JobLogger(BaseJobCallback):
-    def __init__(self, logfile: str = './job_log.log', loglevel: int = logging.INFO) -> None:
-        super().__init__()
-        self.logger = logging.getLogger('job_logger')
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler = logging.FileHandler(logfile)
-        handler.setLevel(loglevel)
-        handler.setFormatter(formatter)
-        self.logger.setLevel(loglevel)
-        self.logger.addHandler(handler)
-
-    def __call__(self, job_id, job_status, queue_position, job):
-        pass

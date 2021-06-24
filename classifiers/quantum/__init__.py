@@ -8,7 +8,7 @@ from qiskit.aqua import AquaError
 from qiskit.transpiler import Layout
 from qiskit.providers.basebackend import BaseBackend
 from itertools import product
-from typing import Union, Dict, List
+from typing import Union, Dict
 
 logger = logging.getLogger(__name__)
 
