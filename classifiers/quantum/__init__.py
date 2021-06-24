@@ -2,11 +2,13 @@ import logging
 from abc import ABCMeta
 
 from .. import Classifier
-from qiskit.circuit import QuantumRegister
+from qiskit.compiler import transpile
+from qiskit.circuit import QuantumRegister, QuantumCircuit
 from qiskit.circuit import Qubit
 from qiskit.aqua import AquaError
 from qiskit.transpiler import Layout
 from qiskit.providers.basebackend import BaseBackend
+from qiskit.visualization import plot_circuit_layout
 from itertools import product
 from typing import Union, Dict
 
@@ -24,48 +26,51 @@ class Qasvm_Mapping_4x2(Layout):
         if backend is None or isinstance(backend, dict):
             super().__init__(backend)
         else:
-            a = Qubit(QuantumRegister(1, 'a'), 0)
-            i0 = Qubit(QuantumRegister(2, 'i'), 0)
-            i1 = Qubit(QuantumRegister(2, 'i'), 1)
-            xi = Qubit(QuantumRegister(1, 'xi'), 0)
-            yi = Qubit(QuantumRegister(1, 'yi'), 0)
-            j0 = Qubit(QuantumRegister(2, 'j'), 0)
-            j1 = Qubit(QuantumRegister(2, 'j'), 1)
-            xj = Qubit(QuantumRegister(1, 'xj'), 0)
-            yj = Qubit(QuantumRegister(1, 'yj'), 0)
-            config = backend.configuration()
+            self.backend = backend
+            self.registers = dict()
+            self.registers['a'] = QuantumRegister(1, 'a')
+            self.registers['i'] = QuantumRegister(2, 'i')
+            self.registers['xi'] = QuantumRegister(1, 'xi')
+            self.registers['yi'] = QuantumRegister(1, 'yi')
+            self.registers['j'] = QuantumRegister(2, 'j')
+            self.registers['xj'] = QuantumRegister(1, 'xj')
+            self.registers['yj'] = QuantumRegister(1, 'yj')
+
+            config = self.backend.configuration()
             if config.n_qubits < 9:
                 raise QuantumError(f'At least 9 qubits required, but the backend has {config.n_qubits} qubits')
             if len(qubits) > 9:
                 raise QuantumError(f'Specify 9 qubits instead of {len(qubits)}')
             try:
                 second_dict = dict()
-                first_dict = dict()
-                second_dict[qubits['a']] = a
-                second_dict[qubits['i0']] = i0
-                second_dict[qubits['i1']] = i1
-                second_dict[qubits['xi']] = xi
-                second_dict[qubits['yi']] = yi
-                second_dict[qubits['j0']] = j0
-                second_dict[qubits['j1']] = j1
-                second_dict[qubits['xj']] = xj
-                second_dict[qubits['yj']] = yj
+                second_dict[qubits['a']] = Qubit(self.registers['a'], 0)
+                second_dict[qubits['i0']] = Qubit(self.registers['i'], 0)
+                second_dict[qubits['i1']] = Qubit(self.registers['i'], 1)
+                second_dict[qubits['xi']] = Qubit(self.registers['xi'], 0)
+                second_dict[qubits['yi']] = Qubit(self.registers['yi'], 0)
+                second_dict[qubits['j0']] = Qubit(self.registers['j'], 0)
+                second_dict[qubits['j1']] = Qubit(self.registers['j'], 1)
+                second_dict[qubits['xj']] = Qubit(self.registers['xj'], 0)
+                second_dict[qubits['yj']] = Qubit(self.registers['yj'], 0)
 
-                first_dict[qubits['a']] = a
-                first_dict[qubits['i0']] = i0
-                first_dict[qubits['i1']] = i1
-                first_dict[qubits['xi']] = xi
-                first_dict[qubits['yi']] = yi
-                first_dict[qubits['xj']] = xj
+                first_dict = dict()
+                first_dict[qubits['a']] = Qubit(self.registers['a'], 0)
+                first_dict[qubits['i0']] = Qubit(self.registers['i'], 0)
+                first_dict[qubits['i1']] = Qubit(self.registers['i'], 1)
+                first_dict[qubits['xi']] = Qubit(self.registers['xi'], 0)
+                first_dict[qubits['yi']] = Qubit(self.registers['yi'], 0)
+                first_dict[qubits['xj']] = Qubit(self.registers['xj'], 0)
             except KeyError as e:
                 raise QuantumError(f"Qubit name '{e}' is missing.")
             self.second_dict = second_dict
             self.first_dict = first_dict
             super().__init__(self.second_dict)
 
-    @property
-    def _layout_for_first_order_circuit(self):
-        return self.first_dict
+    def plot(self, view: str = 'virtual'):
+        qc = QuantumCircuit(*tuple(self.registers.values()))
+        qc = transpile(qc, backend=self.backend, initial_layout=self)
+        fig = plot_circuit_layout(qc, self.backend, view)
+        return fig
 
 
 def postprocess_Z_expectation(n: int, dic: Dict[str, float], *count):

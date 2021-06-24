@@ -250,7 +250,7 @@ class QASVM(QuantumClassifier):
         if tf:
             if self.quantum_instance.compile_config['initial_layout'] is not None:
                 _temp = self.quantum_instance.compile_config['initial_layout']
-                self.quantum_instance.compile_config['initial_layout'] = _temp._layout_for_first_order_circuit
+                self.quantum_instance.compile_config['initial_layout'] = _temp.first_dict
                 self.transpiled_first_order_circuit = self.quantum_instance.transpile(self.naive_first_order_circuit)[0]
                 self.quantum_instance.compile_config['initial_layout'] = _temp
                 self.transpiled_second_order_circuit = self.quantum_instance.transpile(self.naive_second_order_circuit)[
