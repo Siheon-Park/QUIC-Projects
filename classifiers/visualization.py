@@ -99,8 +99,8 @@ class Plot_SVM(object):
         yyy = YY.flatten()
         zzz = self.cls.f(np.vstack((xxx, yyy)).T)
         ZZ = zzz.reshape(XX.shape)
-        c1 = min(np.abs(self.cls.f(self.cls.data[self.cls.polary > 0])))
-        c2 = -min(np.abs(self.cls.f(self.cls.data[self.cls.polary < 0])))
+        c1 = min(np.abs(self.cls.f(self.cls.data[self.cls.label > 0.5])))
+        c2 = -min(np.abs(self.cls.f(self.cls.data[self.cls.label < 0.5])))
         if color_setting is None:
             cdict = {-1: 'b', 0: 'k', 1: 'r', c1: 'm', c2: 'c'}
         else:
