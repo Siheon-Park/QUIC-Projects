@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod, ABCMeta
+from abc import ABC, abstractmethod
 from typing import Callable
 
 from pandas import DataFrame, melt
@@ -8,35 +8,24 @@ from seaborn import relplot, lineplot, scatterplot
 from torch.utils.tensorboard import SummaryWriter
 
 from . import Classifier
+from qiskit.circuit import ParameterVector
 
 
 class CallBack(ABC):
     @abstractmethod
-    def __call__(self):
+    def __call__(self, *args, **kwargs):
         raise NotImplementedError
 
 
 CallBack.save = Classifier.save
 
 
-class BaseStorage(CallBack, metaclass=ABCMeta):
-    def __init__(self) -> None:
-        super().__init__()
-        self.data = DataFrame()
-
-    def clear(self):
-        del self.data
-        self.data = DataFrame()
-
-
-# noinspection PyMethodOverriding
-# noinspection SpellCheckingInspection
-class CostParamStorage(BaseStorage):
+class CostParamStorage(CallBack):
     """ saves simply costs and params"""
 
-    def __init__(self, interval: int = 1) -> None:
+    def __init__(self, parameter_key: ParameterVector = None) -> None:
         super().__init__()
-        self.intv = interval
+        self.data = DataFrame()
 
     def __call__(self, k, parameters, cost, step_size, isaccepted):
         """Args: k, parameters, cost, step_size, isaccepted"""
