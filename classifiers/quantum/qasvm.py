@@ -1,15 +1,15 @@
 import logging
 import numpy as np
-from itertools import product
 from qiskit.circuit.parametervector import ParameterVector, Parameter
 from qiskit.circuit import QuantumCircuit
 from qiskit.utils import QuantumInstance
+from qiskit_machine_learning.kernels import QuantumKernel
 from sympy.logic.boolalg import Boolean
 from . import postprocess_Z_expectation
 from .quantum_circuits import QASVM_circuit, _CIRCUIT_CLASS_DICT
 from . import QuantumError
 from . import QuantumClassifier
-from typing import Any, Union, Optional, Dict, List
+from typing import Any, Union, Optional, Dict, List, Iterable
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ class QASVM(QuantumClassifier):
         self._var_form_params = None  # set from self.var_form
         self._num_parameters = None  # set from self.var_form
         self._initial_point = None  # self.num_parameters should be defined first
-        self._parameters = ParameterDict()  # set from self.var_form
+        self._parameters = None  # set from self.var_form
         self._feature_map = None  # set self._feature_map_params
         self._feature_map_params = None  # sef from self.feature_map
         self.naive_first_order_circuit = None  # self.var_form, self.feature_map, self.had_transpiled should be
@@ -170,14 +170,16 @@ class QASVM(QuantumClassifier):
             self._var_form = var_form.assign_parameters(
                 dict(zip(_var_form_params, self._var_form_params['0']))) if var_form is not None else var_form
             self._num_parameters = len(_var_form_params)
-            self._parameters = ParameterDict(zip(self._var_form_params['0'], np.empty(self._num_parameters)))
+            # self._parameters = ParameterDict(zip(self._var_form_params['0'], np.empty(self._num_parameters)))
+            self._parameters = ParameterArray(self._var_form_params['0'])
         self.initialized = False
 
     @property
-    def parameters(self) -> Dict[Parameter, float]:
+    def parameters(self) -> np.ndarray:
         """ optimization parameters of QASVM. parameter values can change but not keys """
         return self._parameters
 
+    '''
     @parameters.setter
     def parameters(self, params: Union[np.ndarray, Dict[Parameter, float]]):
         if isinstance(params, np.ndarray):
@@ -188,6 +190,14 @@ class QASVM(QuantumClassifier):
                 self._parameters[k] = params[k]
         else:
             raise QuantumError
+    '''
+
+    @parameters.setter
+    def parameters(self, params: np.ndarray):
+        if len(self._parameters) != len(params):
+            raise QuantumError(
+                f'Expect np.ndarray of length {len(self._parameters)}, but received array of length {len(params)}')
+        self._parameters.update(params)
 
     @property
     def num_parameters(self) -> int:
@@ -343,6 +353,18 @@ class QASVM(QuantumClassifier):
         return self
 
     # self.alpha
+    def alpha(self, params: np.ndarray):
+        if self.var_form is None:
+            return np.abs(params) / sum(np.abs(params))
+        else:
+            parameter = self.parameters.copy()
+            parameter.update(params)
+            var_qc = self.var_form.assign_parameters(parameter.to_dict())
+            var_qc.save_statevector()
+            result = self.quantum_instance.execute(var_qc)
+            return np.abs(result.get_statevector()) ** 2
+
+    '''
     @property
     def alpha(self):
         """ corresponding weights analogous to that of SVM. Set it to None and try again for another circuit run """
@@ -359,6 +381,7 @@ class QASVM(QuantumClassifier):
     @alpha.setter
     def alpha(self, a: np.ndarray):
         self._alpha = a
+    '''
 
     # methods
     # noinspection SpellCheckingInspection
@@ -517,6 +540,84 @@ class QASVM(QuantumClassifier):
         return _string
 
 
+class NormQSVM(QASVM):
+    def __init__(self,
+                 data: np.ndarray,
+                 label: np.ndarray,
+                 quantum_instance: QuantumInstance,
+                 var_form: Optional[QuantumCircuit],
+                 feature_map: Optional[QuantumCircuit],
+                 lamda: float = 1.0,
+                 initial_point: Optional[np.ndarray] = None,
+                 ) -> None:
+        super().__init__(data, label, quantum_instance, k=lamda, option='NqSVM', var_form=var_form,
+                         feature_map=feature_map, initial_point=initial_point, num_data_qubits=feature_map.num_qubits,
+                         num_index_qubits=var_form.num_qubits)
+        self.lamda = lamda
+        self.mode = 'Dual'
+
+
+class PseudoNormQSVM(QuantumClassifier):
+    def __init__(self, data: np.ndarray, label: np.ndarray,
+                 quantum_instance: QuantumInstance, lamda: float = 1.0,
+                 feature_map: QuantumCircuit = None, var_form: QuantumCircuit = None,
+                 initial_point: np.ndarray = None):
+        super().__init__(data, label)
+        del self.alpha
+        self.polary = 2 * self.label - 1
+        self.quantum_instance = quantum_instance
+        self._qk = QuantumKernel(feature_map=feature_map, quantum_instance=quantum_instance, enforce_psd=False)
+        self.kernel_matrix = np.abs(self._qk.evaluate(self.data, self.data)) ** 2
+        self.feature_map = feature_map
+        self.var_form = var_form
+        self.lamda = lamda
+
+        if self.var_form is None:
+            self._parameters = ParameterArray(ParameterVector('theta', self.num_data))
+        else:
+            self._parameters = ParameterArray(self.var_form.parameters)
+        self.num_parameters = len(self.parameters)
+
+        if initial_point is None:
+            self.initial_point = np.pi * (2 * np.random.random(self.num_parameters) - 1)
+        else:
+            self.initial_point = initial_point
+        self.parameters.update(self.initial_point)
+
+    @property
+    def parameters(self):
+        return self._parameters
+
+    @parameters.setter
+    def parameters(self, new_params):
+        self._parameters.update(new_params)
+
+    def alpha(self, params: np.ndarray):
+        if self.var_form is None:
+            return np.abs(params) / sum(np.abs(params))
+        else:
+            parameter = self.parameters.copy()
+            parameter.update(params)
+            var_qc = self.var_form.assign_parameters(parameter.to_dict())
+            var_qc.save_statevector()
+            result = self.quantum_instance.execute(var_qc)
+            return np.abs(result.get_statevector()) ** 2
+
+    def cost_fn(self, params: np.ndarray):
+        alpha = self.alpha(params)
+        beta = alpha * self.polary
+        K = self.kernel_matrix + (1 / self.lamda)
+        ret = beta @ K @ beta.reshape(-1, 1)
+        return ret.item()
+
+    def f(self, testdata):
+        beta = self.alpha(self.parameters) * self.polary
+        K = np.abs(self._qk.evaluate(self.data, testdata)) ** 2
+        K += 1 / self.lamda
+        return beta @ K
+
+
+'''
 class ParameterDict(dict):
     def __add__(self, other):
         ret = ParameterDict()
@@ -555,3 +656,27 @@ class ParameterDict(dict):
     @property
     def size(self):
         return len(self)
+'''
+
+
+class ParameterArray(np.ndarray):
+    def __new__(cls, parameter_vector: ParameterVector, *args, **kwargs):
+        shape = len(parameter_vector)
+        obj = super().__new__(cls, *args, shape=shape, **kwargs)
+        obj.parameter_vector = parameter_vector
+        return obj
+
+    def __array_finalize__(self, obj):
+        if obj is None:
+            return
+        self.parameter_vector = getattr(obj, 'parameter_vector', None)
+
+    def to_dict(self):
+        return dict(zip(self.parameter_vector, self))
+
+    def update(self, params: Union[List, np.ndarray, Iterable]):
+        for i, p in enumerate(params):
+            self[i] = p
+
+    def __repr__(self):
+        return self.to_dict().__repr__()

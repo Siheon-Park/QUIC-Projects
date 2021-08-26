@@ -5,7 +5,6 @@ from .. import Classifier
 from qiskit.compiler import transpile
 from qiskit.circuit import QuantumRegister, QuantumCircuit
 from qiskit.circuit import Qubit
-from qiskit.aqua import AquaError
 from qiskit.transpiler import Layout
 from qiskit.providers.basebackend import BaseBackend
 from qiskit.visualization import plot_circuit_layout
@@ -84,5 +83,5 @@ def postprocess_Z_expectation(n: int, dic: Dict[str, float], *count):
 
 
 # errors
-class QuantumError(AquaError):
+class QuantumError(BaseException):
     pass

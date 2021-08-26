@@ -12,8 +12,8 @@ class Plot_Log_From_SPSA(object):
             q = pathlib.Path.home() / 'QUIC-Projects' / 'exp_logs'
             logfile = max(q.glob('*.log'), key=lambda x: x.stat().st_ctime)
         self.logfile = logfile
-        self.theta_plus_re = re.compile('Objective function at theta[+] for step # \d+: -?\d+[.]\d+')
-        self.theta_minus_re = re.compile('Objective function at theta[-] for step # \d+: -?\d+[.]\d+')
+        self.theta_plus_re = re.compile("Objective function at theta[+] for step # \d+: -?\d+[.]\d+")
+        self.theta_minus_re = re.compile("Objective function at theta[-] for step # \d+: -?\d+[.]\d+")
         self.theta_plus_dict = dict()
         self.theta_minus_dict = dict()
         with open(logfile, 'r') as f:
@@ -93,7 +93,7 @@ class Plot_SVM(object):
     def plot_boundary(self, ax=plt, plot_data: bool = True, fig=None, color_setting: dict = None):
         assert self.cls.data.shape[1] == 2
         xx = np.linspace(min(self.cls.data[:, 0]), max(self.cls.data[:, 0]), 100)
-        yy = np.linspace(min(self.cls.data[:, 1]), max(self.cls.data[:, 1]), 10)
+        yy = np.linspace(min(self.cls.data[:, 1]), max(self.cls.data[:, 1]), 100)
         XX, YY = np.meshgrid(xx, yy)
         xxx = XX.flatten()
         yyy = YY.flatten()
@@ -121,7 +121,8 @@ class Plot_SVM(object):
         else:
             fig.colorbar(PS, ax=ax)
         if plot_data:
-            self.plot('sv', ax=ax)
+            # self.plot('sv', ax=ax)
+            self.plot('data', ax=ax)
 
 
 class Plot_Data(object):
