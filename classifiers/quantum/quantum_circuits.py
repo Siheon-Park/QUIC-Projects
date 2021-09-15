@@ -166,7 +166,6 @@ _CIRCUIT_CLASS_DICT = {
 }
 
 
-# noinspection SpellCheckingInspection
 class AnsatzCircuit9(QuantumCircuit):
     """ ref : https://arxiv.org/pdf/1905.10876.pdf """
 

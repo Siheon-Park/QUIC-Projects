@@ -2,6 +2,7 @@ from enum import Enum
 from multiprocessing import Process, Manager
 from threading import Lock, Thread
 from typing import Optional, List, Callable, Tuple, Any, TypedDict
+from tqdm import tqdm
 
 
 class JobStatus(Enum):

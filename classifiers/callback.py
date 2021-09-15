@@ -34,7 +34,7 @@ class CostParamStorage(CallBack):
             cost = cost(parameters)
 
         if isinstance(parameters, ParameterArray):
-            _temp_dict = dict(zip(map(str, parameters.param_tag), parameters))
+            _temp_dict = dict(zip(map(str, parameters.parameter_vector), parameters))
         else:
             _temp_dict = dict(zip(map(str, range(len(parameters))), parameters))
         _temp_dict2 = dict(Step=self.step)

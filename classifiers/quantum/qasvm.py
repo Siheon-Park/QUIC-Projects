@@ -556,6 +556,10 @@ class NormQSVM(QASVM):
         self.lamda = lamda
         self.mode = 'Dual'
 
+    def __repr__(self):
+        _string = [f'Normalized QSVM({self.num_parameters} number of params)', repr(self.var_form), repr(self.feature_map)]
+        return '\n'.join(_string)
+
 
 class PseudoNormQSVM(QuantumClassifier):
     def __init__(self, data: np.ndarray, label: np.ndarray,
