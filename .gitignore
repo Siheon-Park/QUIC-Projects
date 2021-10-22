@@ -9,7 +9,6 @@ __pycache__
 # saved data
 *.dill
 *.pkl
-summary_ipynb
 .gitignore
 
 # spyder projects
