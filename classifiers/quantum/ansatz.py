@@ -474,7 +474,6 @@ class Circuit13(TwoLocal):
                          insert_barriers=insert_barriers, initial_state=initial_state, name=name)
 
 
-
 class Circuit14(TwoLocal):
     """
          ┌──────────┐ ░ ┌──────────┐                                     ░  ┌──────────┐ ░                           »
@@ -885,7 +884,7 @@ def sample_circuit(circuit_id: int):
 
 
 if __name__ == '__main__':
-    for i in range(1, 19+1):
+    for i in range(1, 19 + 1):
         qc = globals()[f"Circuit{i}"](4, reps=1, insert_barriers=True)
         print(qc.name)
         if isinstance(qc, TwoLocal):
