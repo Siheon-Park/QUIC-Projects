@@ -1,0 +1,10 @@
+{
+    "circuit_id": 4,
+    "layer": 8,
+    "num_params": 112,
+    "expr": 0.017693033962147504,
+    "entcap": 0.8035668192741813,
+    "num_iter": 1024,
+    "last_cost_avg": 0.08675109450430485,
+    "accuracy": 0.9375
+}

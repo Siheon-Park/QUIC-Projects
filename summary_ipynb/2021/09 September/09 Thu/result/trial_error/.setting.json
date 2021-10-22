@@ -1,0 +1,32 @@
+{
+    "CIRCUIT_ID": [
+        5,
+        6,
+        7,
+        8,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+    ],
+    "BASE_DIR": "result/trial_error",
+    "MAXITER": 4,
+    "LAST_AVG": 1,
+    "REPEATS": 1,
+    "LAYERS": [
+        1
+    ],
+    "FEATURE_LAYERS": 2,
+    "DIM": 4,
+    "TRAINING_SIZE": 32,
+    "TEST_SIZE": 32,
+    "SHOTS": 32768,
+    "NUM_SETS": 1,
+    "BLOCKING": true,
+    "PSEUDO": false
+}
