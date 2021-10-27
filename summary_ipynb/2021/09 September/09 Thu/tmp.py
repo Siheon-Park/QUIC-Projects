@@ -17,7 +17,7 @@ from tqdm import tqdm
 from pathlib import Path
 import logging
 
-with open('./result/trial5/setting.json', 'r') as setting_file:
+with open('./result/trial7_ds64/setting.json', 'r') as setting_file:
     SETTING = json.load(setting_file)
 
 
