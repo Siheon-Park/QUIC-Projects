@@ -8,7 +8,7 @@ import numpy as np
 
 sys.path.extend(['/home/quic/QUIC-Projects/'])
 
-# from qiskit_machine_learning.datasets import ad_hoc_data
+from qiskit_machine_learning.datasets import ad_hoc_data
 from qiskit.utils.quantum_instance import QuantumInstance
 from qiskit.circuit.library import ZZFeatureMap, RealAmplitudes, TwoLocal
 from qiskit.providers.aer import AerSimulator
@@ -29,48 +29,52 @@ from pathlib import Path
 import dill
 from tqdm import tqdm
 
-from pandas import DataFrame, read_csv
+from pandas import DataFrame, read_csv, concat
 import seaborn as sns
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-hdlr = SlackHandler(token=SLACK_TOKEN)
-formatter = logging.Formatter(
-    fmt='%(asctime)s *%(module)s* : %(message)s',
-    datefmt='%H:%M:%S'
-)
-hdlr.setFormatter(formatter)
-logger.addHandler(hdlr)
-client = SlackWebClient()
-
 with open('./run_experiment_setting.json', 'r') as f:
-    _setting = json.load(fp=f)
+    SETTING = json.load(fp=f)
 
-CIRCUIT_ID = _setting["CIRCUIT_ID"]
-BASE_DIR = Path(_setting["BASE_DIR"])
-MAXITER = _setting["MAXITER"]
-LAST_AVG = _setting["LAST_AVG"]
-REPEATS = _setting["REPEATS"]
-LAYERS = _setting["LAYERS"]
-FEATURE_LAYERS = _setting["FEATURE_LAYERS"]
-DIM = _setting["DIM"]
-TRAINING_SIZE = _setting["TRAINING_SIZE"]
-TEST_SIZE = _setting["TEST_SIZE"]
-SHOTS = _setting["SHOTS"]
-NUM_SETS = _setting["NUM_SETS"]
-BLOCKING = _setting["BLOCKING"]
-PSEUDO = _setting["PSEUDO"]
+CIRCUIT_ID = SETTING["CIRCUIT_ID"]
+BASE_DIR = Path(SETTING["BASE_DIR"])
+MAXITER = SETTING["MAXITER"]
+LAST_AVG = SETTING["LAST_AVG"]
+REPEATS = SETTING["REPEATS"]
+LAYERS = SETTING["LAYERS"]
+FEATURE_LAYERS = SETTING["FEATURE_LAYERS"]
+DIM = SETTING["DIM"]
+TRAINING_SIZE = SETTING["TRAINING_SIZE"]
+TEST_SIZE = SETTING["TEST_SIZE"]
+SHOTS = SETTING["SHOTS"]
+NUM_SETS = SETTING["NUM_SETS"]
+BLOCKING = SETTING["BLOCKING"]
+PSEUDO = SETTING["PSEUDO"]
 if PSEUDO:
     QSVM = PseudoNormQSVM
 else:
     QSVM = NormQSVM
-IBM = _setting["IBM"]
+IBM = SETTING["IBM"]
 if IBM:
     IBMQ.load_account()
     BACKEND = IBMQ.get_provider(hub='ibm-q', group='open', project='main') \
         .get_backend('ibmq_qasm_simulator')
 else:
     BACKEND = AerSimulator()
+
+
+def get_logger():
+    _logger = logging.getLogger(__name__)
+    _logger.setLevel(level=logging.DEBUG)
+    BASE_DIR.mkdir(exist_ok=True, parents=True)
+    handler = logging.FileHandler(BASE_DIR / 'logging.log')
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(logging.Formatter('[%(asctime)s] %(name)s - %(levelname)s : %(message)s'))
+    _logger.addHandler(handler)
+    return _logger
+
+
+logger = get_logger()
+client = SlackWebClient()
 
 
 def _make_setting(base_dir):
@@ -150,7 +154,6 @@ def run_exp(_dict: dict):
     pid = current_process().pid
     exp_dir = _dict["path"]
     X, y = _dict["training"]
-    Xt, yt = _dict["test"]
     layer = _dict["layer"]
     circuit_id = _dict["circuit_id"]
     dsid = _dict["dataset"]
@@ -158,10 +161,7 @@ def run_exp(_dict: dict):
     dlogger.info(msg=f"Process {pid} start ({stopwatch.check()})")
 
     # setup
-    feature_map1 = Circuit9(DIM, reps=1)
-    feature_map = feature_map1.copy()
-    for _ in range(FEATURE_LAYERS - 1):
-        feature_map.compose(feature_map1, inplace=True)
+    feature_map = ZZFeatureMap(feature_dimension=DIM)
     sCircuit = sample_circuit(circuit_id)
     var_form = sCircuit(int(np.log2(TRAINING_SIZE)), reps=layer, )
     pqcp = PQC_Properties(var_form)
@@ -189,8 +189,6 @@ def run_exp(_dict: dict):
             dlogger.debug(f"Optimizing... {epoch}/{MAXITER}")
     nqsvm.parameters = storage.last_avg(LAST_AVG, ignore_rejected=True)
     dlogger.debug(f"Optimizer terminated {epoch}/{MAXITER} ({stopwatch.check()})")
-    accuracy = nqsvm.accuracy(Xt, yt)
-    dlogger.debug(f"Accuracy: {accuracy} ({stopwatch.check()})")
     last_cost = storage.last_cost_avg(LAST_AVG, ignore_rejected=True)
     dlogger.info(f"Process {pid} finished ({stopwatch.reset()})")
     nqsvm.save(exp_dir / 'nqsvm')
@@ -204,18 +202,9 @@ def run_exp(_dict: dict):
         'entcap': entcap,
         'num_iter': epoch,
         'last_cost_avg': last_cost,
-        'accuracy': accuracy
     }
     with open(exp_dir / 'result.json', 'w') as f:
         json.dump(return_data, fp=f, indent=4)
-    return list(return_data.values())
-
-
-def retrive_from_json(_dict: dict):
-    exp_dir = _dict["path"]
-    with open(exp_dir / 'result.json', 'r') as f:
-        data = json.load(f)
-    return list(data.values())
 
 
 def main():
@@ -223,10 +212,13 @@ def main():
     pid = current_process().pid
     paths = []
     for si in range(NUM_SETS):
-        # ds = IrisDataset(feature_range=(-np.pi, np.pi), true_hot=0)
-        ds = IrisDataset(feature_range=(-np.pi/2, np.pi/2), true_hot=0)
-        X, y = ds.sample(TRAINING_SIZE, return_X_y=True)
-        Xt, yt = ds.sample(TRAINING_SIZE, return_X_y=True)
+        X, y, Xt, yt = ad_hoc_data(
+            training_size=int(TRAINING_SIZE / 2),
+            test_size=int(TEST_SIZE / 2),
+            n=DIM,
+            gap=0.3,
+            one_hot=False
+        )
         for r in range(REPEATS):
             for ci in CIRCUIT_ID:
                 for l in LAYERS:
@@ -240,7 +232,6 @@ def main():
                         "path": _path,
                         "layer": l,
                         "training": [X, y],
-                        "test": [Xt, yt],
                         "dlogger": DirLogger(logger, _path)
                     }
                     paths.append(_dict)
@@ -258,105 +249,88 @@ def main():
             pass
 
 
+def fvector_and_acc():
+    with Pool(os.cpu_count()) as pool:
+        exp_dicts = []
+        for si in range(NUM_SETS):
+            Xt = np.load(BASE_DIR / f"Dataset #{si}" / "Xt")
+            yt = np.load(BASE_DIR / f"Dataset #{si}" / "yt")
+            logger.info(f"Dataset size: {Xt.shape}")
+            for cid, l, r in product(CIRCUIT_ID, LAYERS, REPEATS):
+                _path = Path(['BASE_DIR']) / f"Dataset #{si}/Circuit #{cid}/layer={l}/{r}/"
+                with open(_path / 'nqsvm', 'rb') as _nqsvm_file:
+                    _nqsvm = dill.load(_nqsvm_file)
+                exp_dicts.append({"path": _path, "nqsvm": _nqsvm})
+
+        def calculate_accuracy(_dict):
+            path = _dict["path"]
+            nqsvm = _dict['nqsvm']
+
+            params = [(xt,) for xt in Xt]
+
+            ret = pool.map_async(nqsvm.f, params)
+            logger.debug("asyn ++ 1")
+            return ret, path
+
+        returns = list(map(calculate_accuracy, exp_dicts))
+        for asyn_result, path in tqdm(returns, total=len(returns)):
+            result = np.array(asyn_result.get())
+            acc = sum(np.where(result > 0, 1, 0) == yt) / len(yt)
+
+            with open(path / 'full_result.json', 'w') as fp:
+                json.dump(dict(f=list(result), accuracy=acc), fp=fp)
+            logger.info(f"got result of {path}")
+
+    logger.info('JOBS FINISHED')
+
+
 def retreive_result():
     result = []
     for si, ci, l, r in tqdm(product(range(NUM_SETS), CIRCUIT_ID, LAYERS, range(REPEATS)), desc='retriving...'):
         _path = BASE_DIR / f"Dataset #{si}" / f"Circuit #{ci}" / f"layer={l}" / str(r)
         try:
-            _result = retrive_from_json({"path": _path})
+            _result = get_full_results_from_json(_path)
         except FileNotFoundError:
             continue
         else:
             result.append(_result)
+    data = concat(result, ignore_index=True)
+    data.to_csv(BASE_DIR / 'sample_summary.csv', index=False)
+    logger.info('sample_summary.csv')
 
-    data = DataFrame(
-        data=np.array(result),
-        columns=[
-            'dataset',
-            'circuit_id',
-            'layer',
-            'num_params',
-            'expr',
-            'entcap',
-            'num_iter',
-            'last_cost_avg',
-            'accuracy'
-        ]
-    )
-    data.to_csv(BASE_DIR / 'data.csv')
-    logger.info('From json Complete!!')
-    return data
+    for aggf in ['mean', 'median', 'std', 'min', 'max']:
+        temp = data.pivot_table(values=list(data.columns[4:]), index=list(data.columns[0:4]), aggfunc=aggf)
+        _df = DataFrame(columns=list(temp.index.names) + list(temp.columns),
+                        data=np.hstack([np.asarray(list(temp.index)), temp.to_numpy()]))
+        _df.to_csv(BASE_DIR / f'summary({aggf}).csv', index=False)
+    logger.info('summary(*).csv')
+
+    result = []
+    for si, cid, ly in product(range(NUM_SETS), CIRCUIT_ID, LAYERS):
+        data_df = data.loc[(data['dataset'] == si) & (data['circuit_id'] == cid) & (data['layer'] == ly)]
+        min_val = min(data_df['last_cost_avg'])
+        result.append(data_df.loc[data_df['last_cost_avg'] == min_val])
+    min_select_result = concat(result, ignore_index=True)
+    min_select_result.to_csv(BASE_DIR / 'summary.csv', index=False)
 
 
-def pivot_and_draw(data: DataFrame):
-    df = data.pivot_table(
-        index=['dataset', 'circuit_id', 'layer', 'num_params', 'dataset'],
-        values=['expr', 'entcap', 'accuracy', 'num_iter', 'last_cost_avg'],
-        aggfunc={'expr': 'mean',
-                 'entcap': 'mean',
-                 'accuracy': ['mean', 'median', 'std'],
-                 'num_iter': ['mean', 'median', 'std'],
-                 'last_cost_avg': ['mean', 'median', 'std']}
-    )
-    data1 = np.array(list(df.index))
-    data2 = df.to_numpy()
-    if len(data1.shape) == 1:
-        data1 = data1.reshape(-1, 1)
-    result = DataFrame(
-        data=np.hstack([data1, data2]),
-        columns=list(df.index.names) + list(df.columns)
-    )
-    result.to_csv(BASE_DIR / 'result.csv')
-
-    # g = sns.relplot(data=data, x='expr', y='num_iter', hue='accuracy', size='num_params', style='circuit_id')
-    # plt.xscale('log')
-    # g.tight_layout()
-    # g.savefig(BASE_DIR / 'result.png')
-    # client.post_file(
-    #     file_name=BASE_DIR / 'result.png',
-    #     text=f'Iris Dataset (training: {TRAINING_SIZE})',
-    #     mention=True
-    # )
-    prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
-    fig, axes = plt.subplots(1, 2, sharey=True, figsize=(10, 4))
-    ax = axes[0]
-    for cid in range(1, 5):
-        _data = data.loc[data['circuit_id'] == cid]
-        ax.errorbar(x=_data['num_params'], y=_data[('accuracy', 'mean')], yerr=_data[('accuracy', 'std')],
-                    linestyle='none', marker='', color=colors[cid], capsize=3, alpha=0.5)
-        colorble = ax.scatter(x=_data['num_params'], y=_data[('accuracy', 'median')],
-                              c=np.log10(_data[('expr', 'mean')]),
-                              cmap='plasma', marker=f"${cid}$", s=100)
-    fig.colorbar(colorble, ax=ax)
-    ax.set_xlabel('num_params')
-    ax.set_ylabel('accuracy')
-    ax.set_title('log10(expr)')
-    ax = axes[1]
-    for cid in range(1, 5):
-        _data = data.loc[data['circuit_id'] == cid]
-        ax.errorbar(x=_data['num_params'], y=_data[('accuracy', 'mean')], yerr=_data[('accuracy', 'std')],
-                    linestyle='none', marker='', color=colors[cid], capsize=3, alpha=0.5)
-        colorble = ax.scatter(x=_data['num_params'], y=_data[('accuracy', 'median')], c=_data[('entcap', 'mean')],
-                              cmap='plasma', marker=f"${cid}$", s=100)
-    fig.colorbar(colorble, ax=ax)
-    ax.set_xlabel('num_params')
-    ax.set_ylabel('accuracy')
-    ax.set_title('ent. cap.')
-    fig.tight_layout()
-    fig.savefig(BASE_DIR / 'result')
-    client.post_file(BASE_DIR / 'setting.json', text='setting', mention=False, channels='#result')
-    client.post_file(BASE_DIR / 'result', text='result fig', mention=True, channels='#result')
-    plt.show()
+def get_full_results_from_json(_path):
+    with open(_path / 'result.json', 'r') as f1:
+        data = json.load(f1)
+    with open(_path / 'full_result.json', 'r') as f2:
+        data['accuracy'] = json.load(f2)['accuracy']
+    return DataFrame(data=data, index=[0])
 
 
 if __name__ == '__main__':
     stwatch = StopWatch()
     try:
         main()
-        pivot_and_draw(retreive_result())
+        fvector_and_acc()
+        retreive_result()
+
     except Exception as e:
-        logger.error(f"{str(type(e))}: {e}")
+        client.post_message(f"{str(type(e))}: {e}", mention=True)
         raise e
     else:
         client.post_message(f"TIME CONSUMED: {stwatch.reset()}", mention=True)
