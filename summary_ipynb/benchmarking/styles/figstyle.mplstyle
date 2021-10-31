@@ -1,0 +1,54 @@
+# Matplotlib style for Nature journal figures.
+# In general, they advocate for all fonts to be panel labels to be sans serif
+# and all font sizes in a figure to be 7 pt and panel labels to be 8 pt bold.
+
+# Seaborn colorblind palette
+axes.prop_cycle: cycler('color', ['0072B2', '009E73', 'D55E00', 'CC79A7', 'F0E442', '56B4E9'])
+patch.facecolor: 0072B2
+
+# Figure size
+# figure.figsize : 3.3, 2.5  # max width is 3.5 for single column
+
+# Font sizes
+axes.labelsize: 12
+xtick.labelsize: 12
+ytick.labelsize: 12
+legend.fontsize: 12
+font.size: 12
+
+# Font Family
+font.family: sans-serif
+font.sans-serif: DejaVu Sans, Arial, Helvetica, Lucida Grande, Verdana, Geneva, Lucid, Avant Garde, sans-serif
+mathtext.fontset : dejavusans
+
+# Set x axis
+xtick.direction : in
+xtick.major.size : 3
+xtick.major.width : 0.5
+xtick.minor.size : 1.5
+xtick.minor.width : 0.5
+xtick.minor.visible : True
+xtick.top : True
+
+# Set y axis
+ytick.direction : in
+ytick.major.size : 3
+ytick.major.width : 0.5
+ytick.minor.size : 1.5
+ytick.minor.width : 0.5
+ytick.minor.visible : True
+ytick.right : True
+
+# Set line widths
+axes.linewidth : 0.5
+grid.linewidth : 0.5
+# lines.linewidth : 1.
+# lines.markersize: 10
+
+# Always save as 'tight'
+savefig.bbox : tight
+# savefig.pad_inches : 0.01  # Use virtually all space when we specify figure dimensions
+savefig.dpi : 600
+
+# LaTeX packages
+# text.latex.preamble : \usepackage{amsmath} \usepackage{amssymb} \usepackage{sfmath}
