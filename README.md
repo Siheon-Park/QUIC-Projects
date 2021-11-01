@@ -37,7 +37,7 @@ The experiement result will be stored at default directory `ibmq_device_run_resu
 - `LAST_AVG` : Int. Number of last samples to average. default = 2**4
 - `DIR_NAME` : Str. Directory to save results. default = 'ibmq_device_run_results'
 - `provider` : Your IBMQ provider.
-- `layout' : Mapping between virtual and physical qubits.
+- `layout` : Mapping between virtual and physical qubits.
 
 ## How to choose `layout`
 The hardware-noise-robustness of QASVM heavily depends on `layout`.
