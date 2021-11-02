@@ -253,11 +253,11 @@ def fvector_and_acc():
     with Pool(os.cpu_count()) as pool:
         exp_dicts = []
         for si in range(NUM_SETS):
-            Xt = np.load(BASE_DIR / f"Dataset #{si}" / "Xt")
-            yt = np.load(BASE_DIR / f"Dataset #{si}" / "yt")
+            Xt = np.load(BASE_DIR / f"Dataset #{si}" / "Xt.npy")
+            yt = np.load(BASE_DIR / f"Dataset #{si}" / "yt.npy")
             logger.info(f"Dataset size: {Xt.shape}")
-            for cid, l, r in product(CIRCUIT_ID, LAYERS, REPEATS):
-                _path = Path(['BASE_DIR']) / f"Dataset #{si}/Circuit #{cid}/layer={l}/{r}/"
+            for cid, l, r in product(CIRCUIT_ID, LAYERS, range(REPEATS)):
+                _path = BASE_DIR / f"Dataset #{si}/Circuit #{cid}/layer={l}/{r}/"
                 with open(_path / 'nqsvm', 'rb') as _nqsvm_file:
                     _nqsvm = dill.load(_nqsvm_file)
                 exp_dicts.append({"path": _path, "nqsvm": _nqsvm})
@@ -309,8 +309,7 @@ def retreive_result():
     for si, cid, ly in product(range(NUM_SETS), CIRCUIT_ID, LAYERS):
         data_df = data.loc[(data['dataset'] == si) & (data['circuit_id'] == cid) & (data['layer'] == ly)]
         min_val = min(data_df['last_cost_avg'])
-        result.append(data_df.loc[data_df['last_cost_avg'] == min_val])
-    min_select_result = concat(result, ignore_index=True)
+        result.append(data_df.loc[data_df['last_cost_avg'] == min_val])    min_select_result = concat(result, ignore_index=True)
     min_select_result.to_csv(BASE_DIR / 'summary.csv', index=False)
 
 
