@@ -253,8 +253,8 @@ def fvector_and_acc():
     with Pool(os.cpu_count()) as pool:
         exp_dicts = []
         for si in range(NUM_SETS):
-            Xt = np.load(BASE_DIR / f"Dataset #{si}" / "Xt")
-            yt = np.load(BASE_DIR / f"Dataset #{si}" / "yt")
+            Xt = np.load(BASE_DIR / f"Dataset #{si}" / "Xt.npy")
+            yt = np.load(BASE_DIR / f"Dataset #{si}" / "yt.npy")
             logger.info(f"Dataset size: {Xt.shape}")
             for cid, l, r in product(CIRCUIT_ID, LAYERS, REPEATS):
                 _path = Path(['BASE_DIR']) / f"Dataset #{si}/Circuit #{cid}/layer={l}/{r}/"
@@ -325,7 +325,7 @@ def get_full_results_from_json(_path):
 if __name__ == '__main__':
     stwatch = StopWatch()
     try:
-        main()
+        # main()
         fvector_and_acc()
         retreive_result()
 
