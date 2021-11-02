@@ -309,7 +309,8 @@ def retreive_result():
     for si, cid, ly in product(range(NUM_SETS), CIRCUIT_ID, LAYERS):
         data_df = data.loc[(data['dataset'] == si) & (data['circuit_id'] == cid) & (data['layer'] == ly)]
         min_val = min(data_df['last_cost_avg'])
-        result.append(data_df.loc[data_df['last_cost_avg'] == min_val])    min_select_result = concat(result, ignore_index=True)
+        result.append(data_df.loc[data_df['last_cost_avg'] == min_val])
+        min_select_result = concat(result, ignore_index=True)
     min_select_result.to_csv(BASE_DIR / 'summary.csv', index=False)
 
 
