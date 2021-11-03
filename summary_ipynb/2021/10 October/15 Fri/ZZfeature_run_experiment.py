@@ -325,7 +325,7 @@ def get_full_results_from_json(_path):
 if __name__ == '__main__':
     stwatch = StopWatch()
     try:
-        # main()
+        main()
         fvector_and_acc()
         retreive_result()
 
