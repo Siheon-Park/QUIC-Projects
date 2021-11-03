@@ -9,8 +9,6 @@ cachetools==4.2.1
 certifi==2021.5.30
 cffi==1.14.5
 chardet==4.0.0
-conda==4.10.1
-conda-package-handling==1.7.3
 cryptography==3.4.7
 cvxopt==1.2.6
 cycler==0.10.0
@@ -51,9 +49,6 @@ Markdown==3.3.4
 MarkupSafe==1.1.1
 matplotlib==3.4.0
 mistune==0.8.4
-mkl-fft==1.3.0
-mkl-random==1.2.1
-mkl-service==2.3.0
 more-itertools==8.7.0
 mpmath==1.2.1
 multitasking==0.0.9
@@ -113,13 +108,10 @@ requests-ntlm==1.1.0
 requests-oauthlib==1.3.0
 retworkx==0.8.0
 rsa==4.7.2
-ruamel-yaml-conda==0.15.100
 scikit-learn==0.24.1
 scipy==1.6.1
 seaborn==0.11.1
 Send2Trash==1.5.0
-setuptools==52.0.0.post20210125
-sip==4.19.13
 six==1.15.0
 sklearn==0.0
 sparse==0.12.0
