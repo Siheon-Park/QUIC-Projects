@@ -17,7 +17,11 @@
 - Mon Nov 01 09:49:13 2021 KST
 
 ## Environment setting
-Install proper packages by
+Create new conda enviroment with the command.
+```bash
+$ conda env create --name `YOUR_ENV_NAME` --file environment.yaml
+```
+If you have created new environment already, install proper packages
 ```bash
 $ pip install -r run_requirements.txt
 ```
