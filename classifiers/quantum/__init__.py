@@ -74,6 +74,9 @@ class Qasvm_Mapping_4x2(Layout):
 
 def postprocess_Z_expectation(n: int, dic: Dict[str, float], *count):
     """ interpretation of qiskit result. a.k.a. parity of given qubits 'count' """
+    if isinstance(dic, list):
+        logger.warning("(readout) measurement mitigation active. result.get_counts() has mitigated result, calibration data, and unmitigated result.")
+        dic = dic[0]
     temp = 0
     for binary in product((0, 1), repeat=n):
         val1 = (-1) ** sum([binary[c] for c in count])
