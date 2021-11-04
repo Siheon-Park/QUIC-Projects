@@ -2,28 +2,35 @@
 
 ## Version Information
 
-#### Qiskit Software	Version
-- Qiskit	0.25.4
-- Terra	0.17.2
-- Aer	0.8.2
-- Ignis	0.6.0
-- Aqua	0.9.1
-- IBM Q Provider	0.12.3
+#### Qiskit Software Version
+
+- Qiskit 0.25.4
+- Terra 0.17.2
+- Aer 0.8.2
+- Ignis 0.6.0
+- Aqua 0.9.1
+- IBM Q Provider 0.12.3
+
 #### System information
-- Python	3.9.2 (default, Mar 3 2021, 20:02:32) [GCC 7.3.0]
-- OS	Linux
-- CPUs	8
-- Memory (Gb)	15.561397552490234
+
+- Python 3.9.2 (default, Mar 3 2021, 20:02:32) [GCC 7.3.0]
+- OS Linux
+- CPUs 8
+- Memory (Gb) 15.561397552490234
 - Mon Nov 01 09:49:13 2021 KST
 
 ## Environment setting
+
 Create new conda enviroment with the command.
+
 ```bash
-$ conda env create --name `YOUR_ENV_NAME` --file environment.yaml
+conda env create --name `YOUR_ENV_NAME` --file environment.yaml
 ```
+
 If you have created new environment already, install proper packages
+
 ```bash
-$ pip install -r run_requirements.txt
+pip install -r run_requirements.txt
 ```
 
 ## Notice
@@ -32,7 +39,8 @@ After setting environments, run `ibmq_device_run.ipynb`.
 Please check lines with `# TODO:` for they are configuration controllers.
 The experiement result will be stored at default directory `ibmq_device_run_results`.
 
-## Config. in `ibmq_device_run.ipynb`:
+## Config. in `ibmq_device_run.ipynb`
+
 - `I_HAVE_ACCESS`: Boolean. Set to `True` if have vaild IBMQ access.
 - `DATA_TYPE` : Str. Either 'balanced' or 'unbalanced'
 - `DEVICE` : Str. Either 'montreal' or 'toronto'
@@ -44,8 +52,11 @@ The experiement result will be stored at default directory `ibmq_device_run_resu
 - `layout` : Mapping between virtual and physical qubits.
 
 ## How to choose `layout`
+
 The hardware-noise-robustness of QASVM heavily depends on `layout`.
+
 ### Decision Rule
+
 #### Priority 1. Should be one of four
 
 - (yi - i1 - i0 - xi - a - xj - j0 - j1 - yj) connection
@@ -60,6 +71,7 @@ The hardware-noise-robustness of QASVM heavily depends on `layout`.
 #### Priority 4. Overall error on `*i` register should be lower than error on `*j` register
 
 ### Examples
+
 ```python
 from classifiers.quantum import Qasvm_Mapping_4x2
 
@@ -70,4 +82,5 @@ layout = Qasvm_Mapping_4x2(backend, a=13, i0=10, i1=7, xi=12, yi=6, j0=11, j1=8,
 ```
 
 ## Results
+
 If dataset is unbalanced, QASVM performs better than uniform weight STC.
