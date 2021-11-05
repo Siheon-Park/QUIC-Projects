@@ -22,6 +22,7 @@ class Qasvm_Mapping_4x2(Layout):
     """ Layout subclass to fed into QuantumInstance.initial_layout"""
 
     def __init__(self, backend: Union[str, BaseBackend, dict] = None, **qubits: dict):
+        self.json_layout = qubits
         if backend is None or isinstance(backend, dict):
             super().__init__(backend)
         else:
