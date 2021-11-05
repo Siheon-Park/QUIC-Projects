@@ -1,9 +1,10 @@
 import logging
 import numpy as np
+from qiskit import transpile
 from qiskit.circuit.parameter import Parameter
 from qiskit.circuit.parametervector import ParameterVector
 from qiskit.circuit import QuantumCircuit, QuantumRegister, ClassicalRegister
-from qiskit.circuit.library import XGate, U3Gate
+from qiskit.circuit.library import XGate, U3Gate, RXGate, RYGate, RZGate
 from typing import Union, List
 
 logger = logging.getLogger(__name__)
@@ -130,17 +131,41 @@ class _uc_QASVM_circuit(QASVM_circuit):
 
 _uc_QASVM_circuit.X_encode = Bloch_sphere_QASVM_circuit.X_encode
 
+
+# noinspection PyUnresolvedReferences
+class NqSVM_circuit(QASVM_circuit):
+    def UD_encode(self, feature_map, feature_map_params, training_data: np.ndarray, training_label: np.ndarray, N: int,
+                  reg: str = 'i'):
+        ctrl_q = self._reg_dict[reg]
+        target_q = self._reg_dict['x' + reg]
+        target_y = self._reg_dict['y' + reg]
+        feature_map = transpile(feature_map, basis_gates=['rx', 'ry', 'rz', 'cx'])
+        feature_map = transpile(circuits=feature_map, basis_gates=['rx', 'ry', 'rz', 'cx'])
+        feature_map = QuantumCircuit(target_q).compose(feature_map)
+        data_list = [feature_map.assign_parameters(dict(zip(feature_map.parameters, datum))) for datum in training_data]
+        for i, (gate, qubits, cbits) in enumerate(feature_map):
+            if isinstance(gate, RXGate):
+                self.ucrx([float(data_list[n][i][0].params[0]) for n in range(len(training_data))], ctrl_q, qubits)
+            elif isinstance(gate, RYGate):
+                self.ucry([float(data_list[n][i][0].params[0]) for n in range(len(training_data))], ctrl_q, qubits)
+            elif isinstance(gate, RZGate):
+                self.ucrz([float(data_list[n][i][0].params[0]) for n in range(len(training_data))], ctrl_q, qubits)
+            else:
+                self.append(gate, qubits, cbits)
+        self.ucrx(list(np.where(training_label > 0.5, 0, np.pi)), ctrl_q, target_y)
+
+
 # global variables
 _CIRCUIT_CLASS_DICT = {
     'QASVM': QASVM_circuit,
     'Bloch_sphere': Bloch_sphere_QASVM_circuit,
     'uniform': uniform_QASVM_circuit,
     'Bloch_uniform': Bloch_uniform_QASVM_circuit,
-    '_uc': _uc_QASVM_circuit
+    '_uc': _uc_QASVM_circuit,
+    'NqSVM': NqSVM_circuit
 }
 
 
-# noinspection SpellCheckingInspection
 class AnsatzCircuit9(QuantumCircuit):
     """ ref : https://arxiv.org/pdf/1905.10876.pdf """
 

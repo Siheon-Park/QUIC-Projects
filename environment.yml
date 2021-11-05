@@ -1,0 +1,20 @@
+name: test
+channels:
+  - defaults
+dependencies:
+  - python=3.9
+  - pytorch
+  - tensorboard
+  - pip:
+    - qiskit==0.31.0
+    - qiskit-aer==0.9.1
+    - qiskit-aqua==0.9.5
+    - qiskit-ibmq-provider==0.17.0
+    - qiskit-ignis==0.6.0
+    - qiskit-machine-learning==0.2.1
+    - qiskit-terra==0.18.3
+    - torch>=1.8.1
+    - tensorboard>=2.6.0
+    - tqdm>=4.62.3
+    - cvxopt>=1.2.7
+prefix: /home/quic/anaconda3/envs/test

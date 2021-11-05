@@ -1,3 +1,6 @@
+from .iris import IrisDataset
+
+
 class DatasetError(BaseException):
     def __init__(self, *message: object) -> None:
         self.message = ' '.join(message)
