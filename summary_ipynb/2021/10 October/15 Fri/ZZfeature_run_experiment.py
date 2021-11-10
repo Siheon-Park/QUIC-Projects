@@ -31,6 +31,7 @@ from tqdm import tqdm
 
 from pandas import DataFrame, read_csv, concat
 import seaborn as sns
+from datetime import datetime
 
 with open('./run_experiment_setting.json', 'r') as f:
     SETTING = json.load(fp=f)
@@ -47,6 +48,9 @@ TRAINING_SIZE = SETTING["TRAINING_SIZE"]
 TEST_SIZE = SETTING["TEST_SIZE"]
 SHOTS = SETTING["SHOTS"]
 NUM_SETS = SETTING["NUM_SETS"]
+DATA_TYPE = SETTING.get("DATA_TYPE", "Iris")
+DATA_GAP = SETTING.get("DATA_GAP", 0.3)
+DATA_HOT = SETTING.get("DATA_HOT", 0)
 BLOCKING = SETTING["BLOCKING"]
 PSEUDO = SETTING["PSEUDO"]
 if PSEUDO:
@@ -60,6 +64,9 @@ if IBM:
         .get_backend('ibmq_qasm_simulator')
 else:
     BACKEND = AerSimulator()
+
+if DATA_TYPE not in ["Iris", "IBM_AD"]:
+    raise TypeError("'DATA_TYPE' option should be either 'iris' or 'IBM_AD'.")
 
 
 def get_logger():
@@ -78,9 +85,13 @@ client = SlackWebClient()
 
 
 def _make_setting(base_dir):
-    base_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        base_dir.mkdir(parents=True, exist_ok=False)
+    except FileExistsError:
+        logger.warning(f'The experiment exists already. Delete existing files in {str(base_dir)} to fresh start.')
     with open(base_dir / 'setting.json', 'w') as g:
         json.dump(dict(
+            DATETIME = datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
             CIRCUIT_ID=CIRCUIT_ID,
             BASE_DIR=str(base_dir),
             MAXITER=MAXITER,
@@ -93,6 +104,9 @@ def _make_setting(base_dir):
             TEST_SIZE=TEST_SIZE,
             SHOTS=SHOTS,
             NUM_SETS=NUM_SETS,
+            DATA_TYPE = DATA_TYPE,
+            DATA_GAP = DATA_GAP,
+            DATA_HOT = DATA_HOT,
             BLOCKING=BLOCKING,
             PSEUDO=PSEUDO,
             QSVM=str(QSVM),
@@ -167,7 +181,7 @@ def run_exp(_dict: dict):
     pqcp = PQC_Properties(var_form)
     expr = pqcp.expressibility()
     entcap = pqcp.entangling_capability()
-    nqsvm = QSVM(
+    qasvm = QSVM(
         X, y, lamda=1,
         quantum_instance=QuantumInstance(BACKEND, shots=SHOTS, seed_simulator=None),
         var_form=var_form,
@@ -178,7 +192,7 @@ def run_exp(_dict: dict):
     dlogger.debug(f'NQSVM object: expr={expr}, entcap={entcap} ({stopwatch.check()}) / Start Optimization...')
 
     for epoch in range(1, MAXITER + 1):
-        optimizer.step(nqsvm.cost_fn, nqsvm.parameters)
+        optimizer.step(qasvm.cost_fn, qasvm.parameters)
         if BLOCKING:
             if storage.num_accepted() > 2 * LAST_AVG and storage.last_cost_avg(2 * LAST_AVG, ignore_rejected=True) < \
                     storage.last_cost_avg(LAST_AVG, ignore_rejected=True):
@@ -187,17 +201,17 @@ def run_exp(_dict: dict):
                 dlogger.warning(f"Not Converged until {MAXITER}. AVG_Cost : {storage.last_cost_avg(LAST_AVG, True)}")
         if epoch % 10 == 0:
             dlogger.debug(f"Optimizing... {epoch}/{MAXITER}")
-    nqsvm.parameters = storage.last_avg(LAST_AVG, ignore_rejected=True)
+    qasvm.parameters = storage.last_avg(LAST_AVG, ignore_rejected=True)
     dlogger.debug(f"Optimizer terminated {epoch}/{MAXITER} ({stopwatch.check()})")
     last_cost = storage.last_cost_avg(LAST_AVG, ignore_rejected=True)
     dlogger.info(f"Process {pid} finished ({stopwatch.reset()})")
-    nqsvm.save(exp_dir / 'nqsvm')
+    qasvm.save(exp_dir / 'qasvm')
     storage.save(exp_dir / 'storage')
     return_data = {
         'dataset': dsid,
         'circuit_id': circuit_id,
         'layer': layer,
-        'num_params': nqsvm.num_parameters,
+        'num_params': qasvm.num_parameters,
         'expr': expr,
         'entcap': entcap,
         'num_iter': epoch,
@@ -212,33 +226,49 @@ def main():
     pid = current_process().pid
     paths = []
     for si in range(NUM_SETS):
-        X, y, Xt, yt = ad_hoc_data(
-            training_size=int(TRAINING_SIZE / 2),
-            test_size=int(TEST_SIZE / 2),
-            n=DIM,
-            gap=0.3,
-            one_hot=False
-        )
+        try:
+            _DATA_SAVE_FLAG = False
+            X = np.load(BASE_DIR / f"Dataset #{si}" / "X.npy")
+            y = np.load(BASE_DIR / f"Dataset #{si}" / "Xt.npy")
+            Xt = np.load(BASE_DIR / f"Dataset #{si}" / "y.npy")
+            yt = np.load(BASE_DIR / f"Dataset #{si}" / "yt.npy")
+        except FileNotFoundError:
+            _DATA_SAVE_FLAG = True
+            if DATA_TYPE == "IBM_AD":
+                X, y, Xt, yt = ad_hoc_data(
+                    training_size=int(TRAINING_SIZE / 2),
+                    test_size=int(TEST_SIZE / 2),
+                    n=DIM,
+                    gap=DATA_GAP,
+                    one_hot=False
+                )
+            else: # Iris
+                ds = IrisDataset(feature_range=(-np.pi, np.pi), true_hot=DATA_HOT)
+                # ds = IrisDataset(feature_range=(-np.pi/2, np.pi/2), true_hot=DATA_HOT)
+                X, y = ds.sample(TRAINING_SIZE, return_X_y=True)
+                Xt, yt = ds.sample(TRAINING_SIZE, return_X_y=True)
         for r in range(REPEATS):
             for ci in CIRCUIT_ID:
                 for l in LAYERS:
                     _path = BASE_DIR / f"Dataset #{si}" / f"Circuit #{ci}" / f"layer={l}" / str(r)
                     _path.mkdir(parents=True, exist_ok=True)
-                    _dict = {
-                        'qsvm': QSVM,
-                        'dataset': si,
-                        'circuit_id': ci,
-                        "trial": r,
-                        "path": _path,
-                        "layer": l,
-                        "training": [X, y],
-                        "dlogger": DirLogger(logger, _path)
-                    }
-                    paths.append(_dict)
-        np.save(BASE_DIR / f"Dataset #{si}" / "X", X)
-        np.save(BASE_DIR / f"Dataset #{si}" / "Xt", Xt)
-        np.save(BASE_DIR / f"Dataset #{si}" / "y", y)
-        np.save(BASE_DIR / f"Dataset #{si}" / "yt", yt)
+                    if not (_path / 'result.json').is_file():
+                        _dict = {
+                            'qsvm': QSVM,
+                            'dataset': si,
+                            'circuit_id': ci,
+                            "trial": r,
+                            "path": _path,
+                            "layer": l,
+                            "training": [X, y],
+                            "dlogger": DirLogger(logger, _path)
+                        }
+                        paths.append(_dict)
+        if _DATA_SAVE_FLAG:
+            np.save(BASE_DIR / f"Dataset #{si}" / "X", X)
+            np.save(BASE_DIR / f"Dataset #{si}" / "Xt", Xt)
+            np.save(BASE_DIR / f"Dataset #{si}" / "y", y)
+            np.save(BASE_DIR / f"Dataset #{si}" / "yt", yt)
 
     logger.info(f'number of total processes : {len(paths)} at Parent Process {pid}')
 
@@ -258,17 +288,21 @@ def fvector_and_acc():
             logger.info(f"Dataset size: {Xt.shape}")
             for cid, l, r in product(CIRCUIT_ID, LAYERS, range(REPEATS)):
                 _path = BASE_DIR / f"Dataset #{si}/Circuit #{cid}/layer={l}/{r}/"
-                with open(_path / 'nqsvm', 'rb') as _nqsvm_file:
-                    _nqsvm = dill.load(_nqsvm_file)
-                exp_dicts.append({"path": _path, "nqsvm": _nqsvm})
+                try:
+                    with open(_path / 'qasvm', 'rb') as _nqsvm_file:
+                        _nqsvm = dill.load(_nqsvm_file)
+                except FileNotFoundError:
+                    continue
+                else:
+                    exp_dicts.append({"path": _path, "qasvm": _nqsvm})
 
         def calculate_accuracy(_dict):
             path = _dict["path"]
-            nqsvm = _dict['nqsvm']
+            qasvm = _dict['qasvm']
 
             params = [(xt,) for xt in Xt]
 
-            ret = pool.map_async(nqsvm.f, params)
+            ret = pool.map_async(qasvm.f, params)
             logger.debug("asyn ++ 1")
             return ret, path
 
