@@ -2,7 +2,7 @@
     "CIRCUIT_ID": [
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
     ],
-    "BASE_DIR": "/home/quic/QUIC-Projects/summary_ipynb/2021/10 October/15 Fri/Exp4(ZZ64_1024)",
+    "BASE_DIR": "/home/quic/QUIC-Projects/summary_ipynb/2021/10 October/15 Fri/Exp5(Iris_soft)",
     "MAXITER": 1024,
     "LAST_AVG": 16,
     "REPEATS": 8,
@@ -14,8 +14,10 @@
     "TRAINING_SIZE": 64,
     "TEST_SIZE": 150,
     "SHOTS": 32768,
-    "NUM_SETS": 2,
-    "BLOCKING": false,
+    "NUM_SETS": 1,
+    "DATA_TYPE": "Iris",
+    "DATA_HOT": 1,
+    "BLOCKING": true,
     "PSEUDO": false,
     "IBM": false
 }
