@@ -175,7 +175,13 @@ def run_exp(_dict: dict):
     dlogger.info(msg=f"Process {pid} start ({stopwatch.check()})")
 
     # setup
-    feature_map = ZZFeatureMap(feature_dimension=DIM)
+    if DATA_TYPE=="IBM_AD":
+        feature_map = ZZFeatureMap(feature_dimension=DIM)
+    else:
+        feature_map1 = Circuit9(DIM, reps=1)
+        feature_map = feature_map1.copy()
+        for _ in range(FEATURE_LAYERS - 1):
+            feature_map.compose(feature_map1, inplace=True)
     sCircuit = sample_circuit(circuit_id)
     var_form = sCircuit(int(np.log2(TRAINING_SIZE)), reps=layer, )
     pqcp = PQC_Properties(var_form)
@@ -246,7 +252,8 @@ def main():
                 ds = IrisDataset(feature_range=(-np.pi, np.pi), true_hot=DATA_HOT)
                 # ds = IrisDataset(feature_range=(-np.pi/2, np.pi/2), true_hot=DATA_HOT)
                 X, y = ds.sample(TRAINING_SIZE, return_X_y=True)
-                Xt, yt = ds.sample(TRAINING_SIZE, return_X_y=True)
+                Xt = ds.data
+                yt = ds.target
         for r in range(REPEATS):
             for ci in CIRCUIT_ID:
                 for l in LAYERS:
