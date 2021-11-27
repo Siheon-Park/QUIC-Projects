@@ -883,6 +883,24 @@ def sample_circuit(circuit_id: int):
     return getattr(sys.modules[__name__], f"Circuit{circuit_id}")
 
 
+class SingleQubitFeatureMap(QuantumCircuit):
+    def __init__(self, num_qubits=None, reps=1, parameter_prefix='X', name='SingleQubitFeatureMap'):
+        super().__init__(QuantumRegister(size=num_qubits, name='q'), name=name)
+        parameters = ParameterVector(parameter_prefix, 2)
+        for _ in range(reps):
+            for n in range(num_qubits):
+                self.ry(parameters[0], n)
+                self.rz(parameters[1], n)
+
+
+class MultilayerCircuit9FeatureMap(Circuit9):
+    def __init__(self, num_qubits=None, reps=2, parameter_prefix='X', name='MultilayerCircuit9FeatureMap'):
+        super().__init__(num_qubits, reps=1, parameter_prefix=parameter_prefix)
+        featur_map1 = Circuit9(num_qubits, reps=1, parameter_prefix=parameter_prefix)
+        for _ in range(reps):
+            self.compose(featur_map1, inplace=True)
+
+
 if __name__ == '__main__':
     for i in range(1, 19 + 1):
         qc = globals()[f"Circuit{i}"](4, reps=1, insert_barriers=True)
