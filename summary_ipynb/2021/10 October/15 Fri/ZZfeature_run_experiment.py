@@ -91,7 +91,7 @@ def _make_setting(base_dir):
         logger.warning(f'The experiment exists already. Delete existing files in {str(base_dir)} to fresh start.')
     with open(base_dir / 'setting.json', 'w') as g:
         json.dump(dict(
-            DATETIME = datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+            DATETIME=datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
             CIRCUIT_ID=CIRCUIT_ID,
             BASE_DIR=str(base_dir),
             MAXITER=MAXITER,
@@ -104,9 +104,9 @@ def _make_setting(base_dir):
             TEST_SIZE=TEST_SIZE,
             SHOTS=SHOTS,
             NUM_SETS=NUM_SETS,
-            DATA_TYPE = DATA_TYPE,
-            DATA_GAP = DATA_GAP,
-            DATA_HOT = DATA_HOT,
+            DATA_TYPE=DATA_TYPE,
+            DATA_GAP=DATA_GAP,
+            DATA_HOT=DATA_HOT,
             BLOCKING=BLOCKING,
             PSEUDO=PSEUDO,
             QSVM=str(QSVM),
@@ -175,7 +175,7 @@ def run_exp(_dict: dict):
     dlogger.info(msg=f"Process {pid} start ({stopwatch.check()})")
 
     # setup
-    if DATA_TYPE=="IBM_AD":
+    if DATA_TYPE == "IBM_AD":
         feature_map = ZZFeatureMap(feature_dimension=DIM)
     else:
         feature_map1 = Circuit9(DIM, reps=1)
@@ -184,9 +184,9 @@ def run_exp(_dict: dict):
             feature_map.compose(feature_map1, inplace=True)
     sCircuit = sample_circuit(circuit_id)
     var_form = sCircuit(int(np.log2(TRAINING_SIZE)), reps=layer, )
-    pqcp = PQC_Properties(var_form)
-    expr = pqcp.expressibility()
-    entcap = pqcp.entangling_capability()
+    #pqcp = PQC_Properties(var_form)
+    #expr = pqcp.expressibility()
+    #entcap = pqcp.entangling_capability()
     qasvm = QSVM(
         X, y, lamda=1,
         quantum_instance=QuantumInstance(BACKEND, shots=SHOTS, seed_simulator=None),
@@ -195,7 +195,8 @@ def run_exp(_dict: dict):
     )
     storage = CostParamStorage()
     optimizer = tSPSA(maxiter=MAXITER, blocking=True, last_avg=LAST_AVG, callback=storage)
-    dlogger.debug(f'NQSVM object: expr={expr}, entcap={entcap} ({stopwatch.check()}) / Start Optimization...')
+    # dlogger.debug(f'NQSVM object: expr={expr}, entcap={entcap} ({stopwatch.check()}) / Start Optimization...')
+    dlogger.debug(f'NQSVM object: circuit_id={circuit_id}, layer={layer} ({stopwatch.check()}) / Start Optimization...')
 
     for epoch in range(1, MAXITER + 1):
         optimizer.step(qasvm.cost_fn, qasvm.parameters)
@@ -218,8 +219,8 @@ def run_exp(_dict: dict):
         'circuit_id': circuit_id,
         'layer': layer,
         'num_params': qasvm.num_parameters,
-        'expr': expr,
-        'entcap': entcap,
+        'expr': -1,
+        'entcap': -1,
         'num_iter': epoch,
         'last_cost_avg': last_cost,
     }
@@ -235,8 +236,8 @@ def main():
         try:
             _DATA_SAVE_FLAG = False
             X = np.load(BASE_DIR / f"Dataset #{si}" / "X.npy")
-            y = np.load(BASE_DIR / f"Dataset #{si}" / "Xt.npy")
-            Xt = np.load(BASE_DIR / f"Dataset #{si}" / "y.npy")
+            Xt = np.load(BASE_DIR / f"Dataset #{si}" / "Xt.npy")
+            y = np.load(BASE_DIR / f"Dataset #{si}" / "y.npy")
             yt = np.load(BASE_DIR / f"Dataset #{si}" / "yt.npy")
         except FileNotFoundError:
             _DATA_SAVE_FLAG = True
@@ -248,7 +249,7 @@ def main():
                     gap=DATA_GAP,
                     one_hot=False
                 )
-            else: # Iris
+            else:  # Iris
                 ds = IrisDataset(feature_range=(-np.pi, np.pi), true_hot=DATA_HOT)
                 # ds = IrisDataset(feature_range=(-np.pi/2, np.pi/2), true_hot=DATA_HOT)
                 X, y = ds.sample(TRAINING_SIZE, return_X_y=True)
@@ -316,8 +317,9 @@ def fvector_and_acc():
         returns = list(map(calculate_accuracy, exp_dicts))
         for asyn_result, path in tqdm(returns, total=len(returns)):
             result = np.array(asyn_result.get())
+            if len(result.shape) != 1:  # bug fix (for using PsudoNormQSVM)
+                result = result.flatten()
             acc = sum(np.where(result > 0, 1, 0) == yt) / len(yt)
-
             with open(path / 'full_result.json', 'w') as fp:
                 json.dump(dict(f=list(result), accuracy=acc), fp=fp)
             logger.info(f"got result of {path}")
@@ -339,19 +341,16 @@ def retreive_result():
     data.to_csv(BASE_DIR / 'sample_summary.csv', index=False)
     logger.info('sample_summary.csv')
 
-    for aggf in ['mean', 'median', 'std', 'min', 'max']:
-        temp = data.pivot_table(values=list(data.columns[4:]), index=list(data.columns[0:4]), aggfunc=aggf)
-        _df = DataFrame(columns=list(temp.index.names) + list(temp.columns),
-                        data=np.hstack([np.asarray(list(temp.index)), temp.to_numpy()]))
-        _df.to_csv(BASE_DIR / f'summary({aggf}).csv', index=False)
-    logger.info('summary(*).csv')
-
-    result = []
+    result2 = []
+    pqc_info = read_csv(f'./pqc_prop(trs={TRAINING_SIZE}).csv')
     for si, cid, ly in product(range(NUM_SETS), CIRCUIT_ID, LAYERS):
         data_df = data.loc[(data['dataset'] == si) & (data['circuit_id'] == cid) & (data['layer'] == ly)]
         min_val = min(data_df['last_cost_avg'])
-        result.append(data_df.loc[data_df['last_cost_avg'] == min_val])
-        min_select_result = concat(result, ignore_index=True)
+        _data_df = data_df.loc[data_df['last_cost_avg'] == min_val]
+        _data_df['expr'] = pqc_info.loc[(pqc_info['circuit_id']==cid) & (pqc_info['layer']==ly)]['expr'].item()
+        _data_df['entcap'] = pqc_info.loc[(pqc_info['circuit_id']==cid) & (pqc_info['layer']==ly)]['entcap'].item()
+        result2.append(_data_df)
+    min_select_result = concat(result2, ignore_index=True)
     min_select_result.to_csv(BASE_DIR / 'summary.csv', index=False)
 
 
@@ -365,13 +364,13 @@ def get_full_results_from_json(_path):
 
 if __name__ == '__main__':
     stwatch = StopWatch()
-    try:
-        main()
-        fvector_and_acc()
-        retreive_result()
+    # try:
+    # main()
+    # fvector_and_acc()
+    retreive_result()
 
-    except Exception as e:
+    """    except Exception as e:
         client.post_message(f"{str(type(e))}: {e}", mention=True)
         raise e
     else:
-        client.post_message(f"TIME CONSUMED: {stwatch.reset()}", mention=True)
+        client.post_message(f"TIME CONSUMED: {stwatch.reset()}", mention=True)"""
