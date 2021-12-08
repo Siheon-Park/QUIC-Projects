@@ -1,0 +1,10 @@
+{
+    "dataset": 0,
+    "circuit_id": 16,
+    "layer": 2,
+    "num_params": 34,
+    "expr": 0.15422822431657002,
+    "entcap": 0.36117107285264743,
+    "num_iter": 46,
+    "last_cost_avg": 0.034732818603515625
+}
