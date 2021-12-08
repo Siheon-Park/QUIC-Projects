@@ -91,7 +91,7 @@ def _make_setting(base_dir):
         logger.warning(f'The experiment exists already. Delete existing files in {str(base_dir)} to fresh start.')
     with open(base_dir / 'setting.json', 'w') as g:
         json.dump(dict(
-            DATETIME = datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+            DATETIME=datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
             CIRCUIT_ID=CIRCUIT_ID,
             BASE_DIR=str(base_dir),
             MAXITER=MAXITER,
@@ -104,9 +104,9 @@ def _make_setting(base_dir):
             TEST_SIZE=TEST_SIZE,
             SHOTS=SHOTS,
             NUM_SETS=NUM_SETS,
-            DATA_TYPE = DATA_TYPE,
-            DATA_GAP = DATA_GAP,
-            DATA_HOT = DATA_HOT,
+            DATA_TYPE=DATA_TYPE,
+            DATA_GAP=DATA_GAP,
+            DATA_HOT=DATA_HOT,
             BLOCKING=BLOCKING,
             PSEUDO=PSEUDO,
             QSVM=str(QSVM),
@@ -175,7 +175,7 @@ def run_exp(_dict: dict):
     dlogger.info(msg=f"Process {pid} start ({stopwatch.check()})")
 
     # setup
-    if DATA_TYPE=="IBM_AD":
+    if DATA_TYPE == "IBM_AD":
         feature_map = ZZFeatureMap(feature_dimension=DIM)
     else:
         feature_map1 = Circuit9(DIM, reps=1)
@@ -248,7 +248,7 @@ def main():
                     gap=DATA_GAP,
                     one_hot=False
                 )
-            else: # Iris
+            else:  # Iris
                 ds = IrisDataset(feature_range=(-np.pi, np.pi), true_hot=DATA_HOT)
                 # ds = IrisDataset(feature_range=(-np.pi/2, np.pi/2), true_hot=DATA_HOT)
                 X, y = ds.sample(TRAINING_SIZE, return_X_y=True)
@@ -316,8 +316,9 @@ def fvector_and_acc():
         returns = list(map(calculate_accuracy, exp_dicts))
         for asyn_result, path in tqdm(returns, total=len(returns)):
             result = np.array(asyn_result.get())
+            if len(result.shape) != 1:  # bug fix (for using PsudoNormQSVM)
+                result = result.flatten()
             acc = sum(np.where(result > 0, 1, 0) == yt) / len(yt)
-
             with open(path / 'full_result.json', 'w') as fp:
                 json.dump(dict(f=list(result), accuracy=acc), fp=fp)
             logger.info(f"got result of {path}")
@@ -350,7 +351,12 @@ def retreive_result():
     for si, cid, ly in product(range(NUM_SETS), CIRCUIT_ID, LAYERS):
         data_df = data.loc[(data['dataset'] == si) & (data['circuit_id'] == cid) & (data['layer'] == ly)]
         min_val = min(data_df['last_cost_avg'])
-        result.append(data_df.loc[data_df['last_cost_avg'] == min_val])
+        expr = np.mean(data_df['expr'])
+        entcap = np.mean(data_df['entcap'])
+        _data_df = data_df.loc[data_df['last_cost_avg'] == min_val]
+        _data_df['expr'] = expr
+        _data_df['entcap'] = entcap
+        result.append()
         min_select_result = concat(result, ignore_index=True)
     min_select_result.to_csv(BASE_DIR / 'summary.csv', index=False)
 
@@ -368,7 +374,7 @@ if __name__ == '__main__':
     try:
         main()
         fvector_and_acc()
-        retreive_result()
+        # retreive_result()
 
     except Exception as e:
         client.post_message(f"{str(type(e))}: {e}", mention=True)
