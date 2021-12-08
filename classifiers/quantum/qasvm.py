@@ -357,9 +357,7 @@ class QASVM(QuantumClassifier):
         if self.var_form is None:
             return np.abs(params) / sum(np.abs(params))
         else:
-            parameter = self.parameters.copy()
-            parameter.update(params)
-            var_qc = self.var_form.assign_parameters(parameter.to_dict())
+            var_qc = self.var_form.assign_parameters(dict(zip(self.var_form.parameters, params)))
             var_qc.save_statevector()
             result = self.quantum_instance.execute(var_qc)
             return np.abs(result.get_statevector()) ** 2
@@ -439,6 +437,8 @@ class QASVM(QuantumClassifier):
         self.naive_first_order_circuit = self._construct_first_order_circuit()
         if 'ibmq_qasm_simulator' in self.quantum_instance.backend_name:
             self.had_transpiled = False
+        elif self.quantum_instance.noise_config:
+            self.had_transpiled = True
         elif 'ibmq' in self.quantum_instance.backend_name:
             self.had_transpiled = True
         else:
@@ -600,9 +600,7 @@ class PseudoNormQSVM(QuantumClassifier):
         if self.var_form is None:
             return np.abs(params) / sum(np.abs(params))
         else:
-            parameter = self.parameters.copy()
-            parameter.update(params)
-            var_qc = self.var_form.assign_parameters(parameter.to_dict())
+            var_qc = self.var_form.assign_parameters(dict(zip(self.var_form.parameters, params)))
             var_qc.save_statevector()
             result = self.quantum_instance.execute(var_qc)
             return np.abs(result.get_statevector()) ** 2

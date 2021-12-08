@@ -121,7 +121,6 @@ def noise_analysis(error_rate):
         feature_map=feature_map
     )"""
 
-    # %%
     """var_form = RealAmplitudes(2, reps=1)
     qasvm = QASVM(X, y, quantum_instance=noisy_quantum_instance, C=None, k=k, option='Bloch_sphere', var_form=var_form).dual
     print(qasvm.second_order_circuit.depth())
@@ -130,7 +129,6 @@ def noise_analysis(error_rate):
         qasvm = dill.load(f)
     qasvm._quantum_instance = noisy_quantum_instance
 
-    # %%
 
     storage = CostParamStorage()
     optimizer = tSPSA(maxiter=MAXITER, blocking=True, last_avg=LAST_AVG, callback=storage)
