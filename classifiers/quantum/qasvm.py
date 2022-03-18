@@ -392,8 +392,10 @@ class QASVM(QuantumClassifier):
         ret = self._evaluate_first_order_circuit(param, self.data)
         t = ret['ayk'] + ret['ay'] / self.k
         y = np.where(self.label > 0, 1, -1)
-        clf = np.sum(np.maximum(np.zeros_like(t), 1 / self.C - y * t))
-        return clf
+        #esty = np.where(t > 0, 1, -1)
+        risk = np.mean(np.maximum(np.zeros_like(t), -y*t))
+        # clf = np.sum(np.maximum(np.zeros_like(t), 1 / self.C - y * t))
+        return risk
 
     # noinspection SpellCheckingInspection
     def _grad_fn_second_order(self, param: np.ndarray):
@@ -557,7 +559,8 @@ class NormQSVM(QASVM):
         self.mode = 'Dual'
 
     def __repr__(self):
-        _string = [f'Normalized QSVM({self.num_parameters} number of params)', repr(self.var_form), repr(self.feature_map)]
+        _string = [f'Normalized QSVM({self.num_parameters} number of params)', repr(self.var_form),
+                   repr(self.feature_map)]
         return '\n'.join(_string)
 
 
