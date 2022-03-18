@@ -328,6 +328,7 @@ def fvector_and_acc():
 
 
 def retreive_result():
+    pqc_info = read_csv(f'./pqc_prop(trs={TRAINING_SIZE}).csv')
     result = []
     for si, ci, l, r in tqdm(product(range(NUM_SETS), CIRCUIT_ID, LAYERS, range(REPEATS)), desc='retriving...'):
         _path = BASE_DIR / f"Dataset #{si}" / f"Circuit #{ci}" / f"layer={l}" / str(r)
@@ -336,19 +337,19 @@ def retreive_result():
         except FileNotFoundError:
             continue
         else:
+            _pqc_info = pqc_info.loc[(pqc_info['circuit_id']==ci) & (pqc_info['layer']==l)]
+            _result['expr'] = _pqc_info['expr'].item()
+            _result['entcap'] = _pqc_info['entcap'].item()
             result.append(_result)
     data = concat(result, ignore_index=True)
     data.to_csv(BASE_DIR / 'sample_summary.csv', index=False)
     logger.info('sample_summary.csv')
 
     result2 = []
-    pqc_info = read_csv(f'./pqc_prop(trs={TRAINING_SIZE}).csv')
     for si, cid, ly in product(range(NUM_SETS), CIRCUIT_ID, LAYERS):
         data_df = data.loc[(data['dataset'] == si) & (data['circuit_id'] == cid) & (data['layer'] == ly)]
         min_val = min(data_df['last_cost_avg'])
         _data_df = data_df.loc[data_df['last_cost_avg'] == min_val]
-        _data_df['expr'] = pqc_info.loc[(pqc_info['circuit_id']==cid) & (pqc_info['layer']==ly)]['expr'].item()
-        _data_df['entcap'] = pqc_info.loc[(pqc_info['circuit_id']==cid) & (pqc_info['layer']==ly)]['entcap'].item()
         result2.append(_data_df)
     min_select_result = concat(result2, ignore_index=True)
     min_select_result.to_csv(BASE_DIR / 'summary.csv', index=False)

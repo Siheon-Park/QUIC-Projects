@@ -1,0 +1,1 @@
+{"noise": 0, "LAMBDA": 10, "MAXITER": 128, "LAST_AVG": 16, "var_form": [2, 2], "single_gates": ["rx", "ry", "rz"], "two_gates": ["cx"], "shots": 8192}
