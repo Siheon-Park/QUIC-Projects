@@ -4,7 +4,6 @@ from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 from matplotlib import pyplot as plt
-from . import DatasetError
 
 
 class DataLoader:
@@ -37,7 +36,7 @@ class Sklearn_DataLoader(DataLoader):
         elif dataset == 'cancer':
             ds = datasets.load_breast_cancer
         else:
-            raise DatasetError('Not valid Data keyword')
+            raise Exception('Not valid Data keyword')
         data, label = ds(return_X_y=True)
 
         if labels is not None:
@@ -181,3 +180,56 @@ class Example_4x2(ExampleDataLoader):
                           [1.80995737, 1.21355977]])
             y = np.array([0, 1, 1, 1])
         super().__init__(X, y)
+
+
+class Example_4xn(object):
+    def __init__(self, balanced: Union[bool, str], logn: int, seed=None) -> None:
+        np.random.seed(seed)
+        XX, yy = Example_4x2(balanced)()
+
+        def s2c(x):
+            bloch = [1, x[0], x[1]]
+            r, theta, phi = bloch[0], bloch[1], bloch[2]
+            bloch[0] = r * np.sin(theta) * np.cos(phi)
+            bloch[1] = r * np.sin(theta) * np.sin(phi)
+            bloch[2] = r * np.cos(theta)
+            return np.asarray(bloch)
+
+        def c2s(bloch, negate=False):
+            r = np.linalg.norm(bloch)
+            if negate:
+                x = [-np.arccos(bloch[2] / r), np.arctan(bloch[1] / bloch[0])]
+            else:
+                x = [np.arccos(bloch[2]/r), np.arctan(bloch[1] / bloch[0])]
+            return np.asarray(x)
+
+        vecs = np.array(list(map(s2c, XX)))
+        vecA = vecs[yy == 0].mean(axis=0)
+        vecA = vecA / np.linalg.norm(vecA)
+        vecB = vecs[yy == 1].mean(axis=0)
+        vecB = vecB / np.linalg.norm(vecB)
+        vecP = (vecA - vecB) / np.linalg.norm(vecA - vecB)
+        vecQ = -(vecA - vecB) / np.linalg.norm(vecA - vecB)
+
+        # B.add_annotation(vecP, text='P', color='r')
+        # B.add_annotation(vecQ, text='Q', color='b')
+
+        noise = 0.1 * np.random.randn(2 ** logn, 3)
+        if balanced:
+            XA = np.vstack([c2s(vecP + noise[i]) for i in range(int(0.5 * (2 ** logn)))])
+            XB = np.vstack([c2s(vecQ + noise[i], True) for i in range(int(0.5 * (2 ** logn)), int(2 ** logn))])
+            y = np.concatenate([np.zeros(int(0.5 * (2 ** logn))), np.ones(int(0.5 * (2 ** logn)))])
+        else:
+            XA = np.vstack([c2s(vecP + noise[i], True) for i in range(int(0.25 * (2 ** logn)))])
+            XB = np.vstack([c2s(vecQ + noise[i]) for i in range(int(0.25 * (2 ** logn)), int(2 ** logn))])
+            y = np.concatenate([np.zeros(int(0.25 * (2 ** logn))), np.ones(int(0.75 * (2 ** logn)))])
+        X = np.vstack([XA, XB])
+        self.X = X
+        self.y = y
+
+    def __call__(self):
+        return self.X, self.y
+
+
+if __name__ == '__main__':
+    print(Example_4xn(True, 3)())
