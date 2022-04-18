@@ -441,7 +441,7 @@ class QASVM(QuantumClassifier):
             self.had_transpiled = False
         elif self.quantum_instance.noise_config:
             self.had_transpiled = True
-        elif 'ibmq' in self.quantum_instance.backend_name:
+        elif 'ibm' in self.quantum_instance.backend_name:
             self.had_transpiled = True
         else:
             self.had_transpiled = False
