@@ -10,6 +10,7 @@ from .quantum_circuits import QASVM_circuit, _CIRCUIT_CLASS_DICT
 from . import QuantumError
 from . import QuantumClassifier
 from typing import Any, Union, Optional, Dict, List, Iterable
+from qiskit.quantum_info import Statevector
 
 logger = logging.getLogger(__name__)
 
@@ -454,7 +455,8 @@ class QASVM(QuantumClassifier):
                      N=self.num_data)
         qc.X_encode(self.feature_map, self._feature_map_params, testdata=self._feature_map_params)
         qc.SWAP_test()
-        qc.Z_expectation_measurement()
+        if not 'statevector' in self.quantum_instance.backend_name:
+            qc.Z_expectation_measurement()
         return qc
 
     def _construct_second_order_circuit(self):
@@ -476,7 +478,8 @@ class QASVM(QuantumClassifier):
         qc.UD_encode(self.feature_map, self._feature_map_params, training_data=self.data, training_label=self.label,
                      N=self.num_data, reg='j')
         qc.SWAP_test()
-        qc.Z_expectation_measurement()
+        if not 'statevector' in self.quantum_instance.backend_name:
+            qc.Z_expectation_measurement()
         return qc
 
     # noinspection SpellCheckingInspection
@@ -496,8 +499,18 @@ class QASVM(QuantumClassifier):
             param_dict.update(dict(zip(self._var_form_params['j'], param2.values())))
         else:
             param_dict.update(dict(zip(self._var_form_params['j'], param2)))
-        _dict = self.quantum_instance.execute([self.second_order_circuit.assign_parameters(param_dict)],
-                                              self.had_transpiled).get_counts()
+        result = self.quantum_instance.execute([self.second_order_circuit.assign_parameters(param_dict)],
+                                              self.had_transpiled)
+        if not 'statevector' in self.quantum_instance.backend_name:
+            _dict = result.get_counts()
+        else:
+            _qc = self.second_order_circuit
+            _qubits = self.second_order_circuit.qubits
+            _index_a = _qubits.index(list(_qc._reg_dict['a'])[0])
+            _index_yi = _qubits.index(list(_qc._reg_dict['yi'])[0])
+            _index_yj = _qubits.index(list(_qc._reg_dict['yj'])[0])
+            _state = Statevector(result.get_statevector())
+            _dict = _state.probabilities_dict(qargs = [_index_a, _index_yi, _index_yj])
         eval_dict = dict()
         eval_dict['aayyk'] = postprocess_Z_expectation(3, _dict, 2, 1, 0)
         eval_dict['aayy'] = postprocess_Z_expectation(3, _dict, 1, 0)
@@ -518,7 +531,20 @@ class QASVM(QuantumClassifier):
         param_dict_list = [dict(zip(self._feature_map_params, datum)) for datum in data]
         [data_dict.update(param_dict) for data_dict in param_dict_list]
         qc_list = list(map(self.first_order_circuit.assign_parameters, param_dict_list))
-        _dict = self.quantum_instance.execute(qc_list, self.had_transpiled).get_counts()
+        result = self.quantum_instance.execute(qc_list, self.had_transpiled)
+        if not 'statevector' in self.quantum_instance.backend_name:
+            _dict = result.get_counts()
+        else:
+            _qc = self.first_order_circuit
+            _qubits = self.second_order_circuit.qubits
+            _index_a = _qubits.index(list(_qc._reg_dict['a'])[0])
+            _index_yi = _qubits.index(list(_qc._reg_dict['yi'])[0])
+            if len(qc_list)==1:
+                _state = Statevector(result.get_statevector())
+                _dict = _state.probabilities_dict(qargs = [_index_a, _index_yi])
+            else:
+                _state = [Statevector(result.get_statevector(__qc)) for __qc in qc_list]
+                _dict = [__state.probabilities_dict(qargs = [_index_a, _index_yi]) for __state in _state]
         eval_dict = dict()
         if isinstance(_dict, dict):
             eval_dict['ayk'] = postprocess_Z_expectation(2, _dict, 1, 0)
