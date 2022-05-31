@@ -1,15 +1,40 @@
+import json
+import numpy as np
 from time import time
-
-from classifiers.quantum.qasvm import QASVM
-from typing import Callable, Dict, Iterator, Optional, Union
 import logging
 import numpy as np
-from qiskit.algorithms.optimizers.spsa import SPSA
+from qiskit.algorithms.optimizers import SPSA, ADAM
+from qiskit.algorithms.optimizers import OptimizerResult
 from qiskit.algorithms.optimizers.spsa import CALLBACK, _validate_pert_and_learningrate
 
 logger = logging.getLogger(__name__)
+class Result2Dict(dict):
+    
+    def __init__(self, opt:OptimizerResult):
+        if isinstance(opt, OptimizerResult):
+            super().__init__(opt.__dict__)
+        else:
+            super().__init__(opt)
 
+    @classmethod
+    def from_json_path(cls, path):
+        with open(path, 'r') as fp:
+            dc:dict = json.load(fp=fp)
+        for k, v in dc.items():
+            if isinstance(v, list):
+                dc[k]=np.array(v)
+        return cls(dc)
 
+    def to_optresult(self):
+        opt = OptimizerResult()
+        for k, v in self.items():
+            opt.__setattr__(k, v)
+        return opt
+
+    def save_json(self, path, *args, **kwargs):
+        with open(path, 'w') as fp:
+            json.dump(self, *args, fp=fp, default=list, **kwargs)
+            
 class tSPSA(SPSA):
     def __init__(self, *args, **kwargs):
         super(tSPSA, self).__init__(*args, **kwargs)
