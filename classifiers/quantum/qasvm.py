@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+from qiskit import ClassicalRegister, QuantumRegister
 from qiskit.circuit.parametervector import ParameterVector, Parameter
 from qiskit.circuit import QuantumCircuit
 from qiskit.utils import QuantumInstance
@@ -569,15 +570,16 @@ class QASVM(QuantumClassifier):
 
 
 class NormQSVM(QASVM):
-    def __init__(self,
-                 data: np.ndarray,
-                 label: np.ndarray,
-                 quantum_instance: QuantumInstance,
-                 var_form: Optional[QuantumCircuit],
-                 feature_map: Optional[QuantumCircuit],
-                 lamda: float = 1.0,
-                 initial_point: Optional[np.ndarray] = None,
-                 ) -> None:
+    def __init__(
+
+        self, data: np.ndarray, label: np.ndarray,
+        quantum_instance: QuantumInstance,
+        var_form: Optional[QuantumCircuit],
+        feature_map: Optional[QuantumCircuit],
+        lamda: float = 1.0,
+        initial_point: Optional[np.ndarray] = None
+
+    ) -> None:
         super().__init__(data, label, quantum_instance, k=lamda, option='NqSVM', var_form=var_form,
                          feature_map=feature_map, initial_point=initial_point, num_data_qubits=feature_map.num_qubits,
                          num_index_qubits=var_form.num_qubits)
@@ -585,16 +587,86 @@ class NormQSVM(QASVM):
         self.mode = 'Dual'
 
     def __repr__(self):
-        _string = [f'Normalized QSVM({self.num_parameters} number of params)', repr(self.var_form),
+        _string = [f'QASVM (#p: {self.num_parameters})', repr(self.var_form),
                    repr(self.feature_map)]
         return '\n'.join(_string)
 
+class SoftQASVM(NormQSVM):
+    def __init__(
+
+        self, data: np.ndarray, label: np.ndarray, 
+        quantum_instance: QuantumInstance, 
+        var_form: Optional[QuantumCircuit], 
+        feature_map: Optional[QuantumCircuit], 
+        lamda: float = 1, C: float = None,
+        initial_point: Optional[np.ndarray] = None
+
+    ) -> None:
+        super().__init__(data, label, quantum_instance, var_form, feature_map, lamda, initial_point)
+        self.C = C
+        if C is not None:
+            self.regularizer_circuit, self._regular_qr = self._construct_regularizer_circuit()
+        
+    @property
+    def cost_fn(self):
+        return self._cost_fn_soft
+
+    def _cost_fn_soft(self, param: Union[List[float], np.ndarray, Dict[Parameter, float]]):
+        if self.C is not None:
+            return super().cost_fn(param) + self._evaluate_regularizer_circuit(param)/self.C
+        else:
+            return super().cost_fn(param)
+
+    def _construct_regularizer_circuit(self):
+        """ constructor of regularizer-circuit where var_form parameters are 'theta'."""
+        qr1 = QuantumRegister(self.var_form.num_qubits)
+        qr2 = QuantumRegister(self.var_form.num_qubits)
+        cr = ClassicalRegister(self.var_form.num_qubits)
+        qc = QuantumCircuit(qr1, qr2, cr)
+        qc.compose(self.var_form, list(qr1), inplace=True)
+        qc.compose(self.var_form, list(qr2), inplace=True)
+        for qubit1, qubit2 in zip(list(qr1), list(qr2)):
+            qc.cx(qubit1, qubit2)
+        if 'statevector' not in self.quantum_instance.backend_name:
+            qc.measure(qr2, cr)
+        return qc, qr2
+
+    def _evaluate_regularizer_circuit(self, param: Union[np.ndarray, List[float], dict]) -> float:
+        """ evaluating second-order-circuit.
+            Args:
+                param1: 'theta_i'
+                param2: 'theta_j' 
+            Return:
+                Dict of Z evals (float)"""
+        if isinstance(param, dict):
+            param_dict = dict(zip(self._var_form_params['0'], param.values()))
+        else:
+            param_dict = dict(zip(self._var_form_params['0'], param))
+
+        result = self.quantum_instance.execute([self.regularizer_circuit.assign_parameters(param_dict)],
+                                              self.had_transpiled)
+        if 'statevector' not in self.quantum_instance.backend_name:
+            _dict = result.get_counts()
+        else:
+            _qubits = self.regularizer_circuit.qubits
+            _target_qubits = list(self._regular_qr)
+            _state = Statevector(result.get_statevector())
+            _dict = _state.probabilities_dict(qargs = [_qubits.index(_target) for _target in _target_qubits])
+        if isinstance(_dict, list):
+            logger.warning("(readout) measurement mitigation active. result.get_counts() has mitigated result, calibration data, and unmitigated result.")
+            _dict = _dict[0]
+        return _dict.get(''.join(['0' for _ in range(len(self._regular_qr))]), 0)/sum(_dict.values())
 
 class PseudoNormQSVM(QuantumClassifier):
-    def __init__(self, data: np.ndarray, label: np.ndarray,
-                 quantum_instance: QuantumInstance, lamda: float = 1.0,
-                 feature_map: QuantumCircuit = None, var_form: QuantumCircuit = None,
-                 initial_point: np.ndarray = None):
+    def __init__(
+
+        self, data: np.ndarray, label: np.ndarray,
+        quantum_instance: QuantumInstance, 
+        lamda: float = 1.0,
+        feature_map: QuantumCircuit = None, var_form: QuantumCircuit = None,
+        initial_point: np.ndarray = None
+
+    ):
         super().__init__(data, label)
         del self.alpha
         self.polary = 2 * self.label - 1
@@ -647,6 +719,26 @@ class PseudoNormQSVM(QuantumClassifier):
         K += 1 / self.lamda
         return beta @ K
 
+class PseudoSoftQASVM(PseudoNormQSVM):
+    def __init__(
+        
+        self, data: np.ndarray, label: np.ndarray, 
+        quantum_instance: QuantumInstance, 
+        lamda: float = 1, C: float = None,
+        feature_map: QuantumCircuit = None, 
+        var_form: QuantumCircuit = None, 
+        initial_point: np.ndarray = None
+        
+    ):
+        super().__init__(data, label, quantum_instance, lamda, feature_map, var_form, initial_point)
+        self.C = C
+
+    def cost_fn(self, params: np.ndarray):
+        alpha = self.alpha(params)
+        if self.C is not None:
+            return super().cost_fn(params) + np.sum(alpha ** 2).item()/self.C
+        else:
+            return super().cost_fn(params)
 
 '''
 class ParameterDict(dict):
