@@ -360,7 +360,8 @@ class QASVM(QuantumClassifier):
             return np.abs(params) / sum(np.abs(params))
         else:
             var_qc = self.var_form.assign_parameters(dict(zip(self.var_form.parameters, params)))
-            var_qc.save_statevector()
+            if 'statevector' not in self.quantum_instance.backend_name:
+                var_qc.save_statevector()
             result = self.quantum_instance.execute(var_qc)
             return np.abs(result.get_statevector()) ** 2
 
@@ -702,7 +703,8 @@ class PseudoNormQSVM(QuantumClassifier):
             return np.abs(params) / sum(np.abs(params))
         else:
             var_qc = self.var_form.assign_parameters(dict(zip(self.var_form.parameters, params)))
-            var_qc.save_statevector()
+            if 'statevector' not in self.quantum_instance.backend_name:
+                var_qc.save_statevector()
             result = self.quantum_instance.execute(var_qc)
             return np.abs(result.get_statevector()) ** 2
 
@@ -713,12 +715,32 @@ class PseudoNormQSVM(QuantumClassifier):
         ret = beta @ K @ beta.reshape(-1, 1)
         return ret.item()
 
+    def _w_fn(self, params:np.ndarray):
+        alpha = self.alpha(params)
+        beta = alpha * self.polary
+        K = self.kernel_matrix
+        ret = beta @ K @ beta.reshape(-1, 1)
+        return ret.item()
+
     def f(self, testdata):
         beta = self.alpha(self.parameters) * self.polary
         K = np.abs(self._qk.evaluate(self.data, testdata)) ** 2
         K += 1 / self.lamda
         return beta @ K
+        # return beta @ K/self._w_fn(self.parameters) + self.bias(self.parameters)
 
+    def bias(self, params: np.ndarray):
+        alpha = self.alpha(params)
+        beta = alpha * self.polary
+        K = self.kernel_matrix + (1 / self.lamda)
+        ret = alpha @ K @ beta.reshape(-1, 1)
+        return sum(beta)-ret.item()/self._w_fn(params)
+
+    def constraint(self, params:np.ndarray):
+        alpha = self.alpha(params)
+        beta = alpha * self.polary
+        return sum(beta)
+        
 class PseudoSoftQASVM(PseudoNormQSVM):
     def __init__(
         
