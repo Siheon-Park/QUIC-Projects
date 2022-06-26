@@ -12,10 +12,11 @@ from . import QuantumError
 from . import QuantumClassifier
 from typing import Any, Union, Optional, Dict, List, Iterable
 from qiskit.quantum_info import Statevector
+from qiskit.providers.aer import StatevectorSimulator
 
 logger = logging.getLogger(__name__)
 
-
+STATEVECTOR_INSTANCE = QuantumInstance(backend = StatevectorSimulator())
 class QASVM(QuantumClassifier):
     """
         Quantum Approximated Support Vector Machine
@@ -666,14 +667,16 @@ class PseudoNormQSVM(QuantumClassifier):
         lamda: float = 1.0,
         feature_map: QuantumCircuit = None, var_form: QuantumCircuit = None,
         initial_point: np.ndarray = None
-
     ):
         super().__init__(data, label)
         del self.alpha
         self.polary = 2 * self.label - 1
         self.quantum_instance = quantum_instance
-        self._qk = QuantumKernel(feature_map=feature_map, quantum_instance=quantum_instance, enforce_psd=False)
-        self.kernel_matrix = np.abs(self._qk.evaluate(self.data, self.data)) ** 2
+        if feature_map is None:
+            self.kernel_matrix = data
+        else:
+            self._qk = QuantumKernel(feature_map=feature_map, quantum_instance=STATEVECTOR_INSTANCE, enforce_psd=False)
+            self.kernel_matrix = self._qk.evaluate(self.data, self.data) # np.abs(self._qk.evaluate(self.data, self.data)) ** 2
         self.feature_map = feature_map
         self.var_form = var_form
         self.lamda = lamda
@@ -703,10 +706,13 @@ class PseudoNormQSVM(QuantumClassifier):
             return np.abs(params) / sum(np.abs(params))
         else:
             var_qc = self.var_form.assign_parameters(dict(zip(self.var_form.parameters, params)))
-            if 'statevector' not in self.quantum_instance.backend_name:
-                var_qc.save_statevector()
-            result = self.quantum_instance.execute(var_qc)
-            return np.abs(result.get_statevector()) ** 2
+            # if 'statevector' not in self.quantum_instance.backend_name:
+            #     # var_qc.save_statevector()
+            #     return Statevector(var_qc).probabilities()
+            # else:
+            #     result = self.quantum_instance.execute(var_qc)
+            #     return # np.abs(result.get_statevector()) ** 2
+            return Statevector(var_qc).probabilities()
 
     def cost_fn(self, params: np.ndarray):
         alpha = self.alpha(params)
@@ -724,22 +730,13 @@ class PseudoNormQSVM(QuantumClassifier):
 
     def f(self, testdata):
         beta = self.alpha(self.parameters) * self.polary
-        K = np.abs(self._qk.evaluate(self.data, testdata)) ** 2
+        if self.feature_map is None:
+            K = testdata
+        else:
+            K = self._qk.evaluate(self.data, testdata) # np.abs(self._qk.evaluate(self.data, testdata)) ** 2
         K += 1 / self.lamda
         return beta @ K
         # return beta @ K/self._w_fn(self.parameters) + self.bias(self.parameters)
-
-    def bias(self, params: np.ndarray):
-        alpha = self.alpha(params)
-        beta = alpha * self.polary
-        K = self.kernel_matrix + (1 / self.lamda)
-        ret = alpha @ K @ beta.reshape(-1, 1)
-        return sum(beta)-ret.item()/self._w_fn(params)
-
-    def constraint(self, params:np.ndarray):
-        alpha = self.alpha(params)
-        beta = alpha * self.polary
-        return sum(beta)
         
 class PseudoSoftQASVM(PseudoNormQSVM):
     def __init__(
@@ -749,8 +746,7 @@ class PseudoSoftQASVM(PseudoNormQSVM):
         lamda: float = 1, C: float = None,
         feature_map: QuantumCircuit = None, 
         var_form: QuantumCircuit = None, 
-        initial_point: np.ndarray = None
-        
+        initial_point: np.ndarray = None,
     ):
         super().__init__(data, label, quantum_instance, lamda, feature_map, var_form, initial_point)
         self.C = C
@@ -761,6 +757,27 @@ class PseudoSoftQASVM(PseudoNormQSVM):
             return super().cost_fn(params) + np.sum(alpha ** 2).item()/self.C
         else:
             return super().cost_fn(params)
+
+    #def bias(self, params):
+    #    alpha = self.alpha(params)
+    #    if self.var_form is None:
+    #        index = np.argmax(alpha)
+    #    else:
+    #        var_qc = self.var_form.assign_parameters(dict(zip(self.var_form.parameters, params))).copy('bias_qc')
+    #        var_qc.measure_all()
+    #        self.quantum_instance.execute(var_qc)
+    #        result = self.quantum_instance.execute(var_qc)
+    #        ret_dict = result.get_counts()
+    #        index = int(list(ret_dict.keys())[0], base=2)
+    #    w = self.cost_fn(params)
+    #    K = self.kernel_matrix
+    #    beta = alpha * self.polary
+    #    bias = self.polary[index]*(w-alpha[index]/self.C)
+    #    bias -= (beta @ K).flatten()[index]
+    #    return bias.item()
+    #
+    #def f(self, testdata):
+    #    return super().f(testdata=testdata)# +self.bias(self.parameters)
 
 '''
 class ParameterDict(dict):
