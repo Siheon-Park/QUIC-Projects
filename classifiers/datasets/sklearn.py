@@ -5,7 +5,7 @@ from sklearn import datasets
 from sklearn.preprocessing import MinMaxScaler, LabelBinarizer
 from seaborn import pairplot
 
-class SklearnToyDataset(object):
+class SklearnDataset(object):
     def __init__(self, loader:Union[callable, str], feature_range: List[float] = None, true_hot: Union[int, str] = None):
         super().__init__()
         if isinstance(loader, str):
@@ -53,6 +53,18 @@ class SklearnToyDataset(object):
             y = _tmp[_tmp.columns[-1]].to_numpy()
             return X, y
 
+    def sample_training_and_test_dataset(self, size: tuple[int, int], *args, return_X_y: bool = False, **kwargs):
+        _tmp = self.frame.sample(size[0]+size[1], *args, **kwargs)
+        training, test = _tmp.iloc[:size[0]], _tmp.iloc[size[0]:]
+        if return_X_y:
+            X = training[training.columns[:self.num_features]].to_numpy()
+            y = training[training.columns[-1]].to_numpy()
+            Xt = test[test.columns[:self.num_features]].to_numpy()
+            yt = test[test.columns[-1]].to_numpy()
+            return X, y, Xt, yt
+        else:
+            return training, test
+
     def plot(self, sampled_frame: Union[DataFrame, List[np.ndarray]] = None):
         if sampled_frame is None:
             sampled_frame = self.frame
@@ -66,6 +78,3 @@ class SklearnToyDataset(object):
                                                 ))
         return pairplot(sampled_frame, hue="target_name", hue_order=self.target_names, diag_kind='hist',
                         x_vars=self.feature_names, y_vars=self.feature_names)
-class IrisDataset(SklearnToyDataset):
-    def __init__(self, feature_range: List[float] = None, true_hot: Union[int, str] = None):
-        super().__init__('iris', feature_range=feature_range, true_hot=true_hot)

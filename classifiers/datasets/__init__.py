@@ -1,4 +1,5 @@
 from .iris import IrisDataset
+from .sklearn import SklearnDataset
 
 
 class DatasetError(BaseException):
