@@ -893,19 +893,20 @@ class SingleQubitFeatureMap(QuantumCircuit):
                 self.rz(parameters[1], n)
 
 
-class MultilayerCircuit9FeatureMap(Circuit9):
-    def __init__(self, num_qubits=None, reps=2, parameter_prefix='X', name='MultilayerCircuit9FeatureMap'):
-        super().__init__(num_qubits, reps=1, parameter_prefix=parameter_prefix)
-        featur_map1 = Circuit9(num_qubits, reps=1, parameter_prefix=parameter_prefix)
-        for _ in range(reps):
-            self.compose(featur_map1, inplace=True)
+class MultilayerCircuit9FeatureMap(QuantumCircuit):
+     def __init__(self, num_qubits=None, reps=2, parameter_prefix='X', name='MultilayerCircuit9FeatureMap'):
+          super().__init__(num_qubits, name=name)
+          _feature_map = Circuit9(num_qubits, reps=1, parameter_prefix=parameter_prefix)
+          for _ in range(reps):
+               self.compose(_feature_map.copy(), inplace=True)
 
 
 if __name__ == '__main__':
-    for i in range(1, 19 + 1):
-        qc = globals()[f"Circuit{i}"](4, reps=1, insert_barriers=True)
-        print(qc.name)
-        if isinstance(qc, TwoLocal):
-            qc = qc.decompose()
-        print(qc.draw(fold=120))
-        print('\n')
+    # for i in range(1, 19 + 1):
+    #     qc = globals()[f"Circuit{i}"](4, reps=1, insert_barriers=True)
+    #     print(qc.name)
+    #     if isinstance(qc, TwoLocal):
+    #         qc = qc.decompose()
+    #     print(qc.draw(fold=120))
+    #     print('\n')
+    print(MultilayerCircuit9FeatureMap(4).decompose())
