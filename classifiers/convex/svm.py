@@ -149,3 +149,72 @@ class BinarySVM(ConvexClassifier):
             return 0.5 * float(A.T @ K @ A) - np.sum(self.alpha)
         else:
             return None
+
+class CvxSoftQASVM(ConvexClassifier):
+    def __init__(self, kernel: Kernel, C: float = None, lamda: float = None, **kwargs) -> None:
+        self.kernel = kernel
+        self.C = C
+        self.lamda = lamda
+
+        self.status = None
+        self.iterations = None
+        self.alpha = None
+        self.result = None
+
+    def f(self, test: np.ndarray):
+        if self.kernel == 'precomputed':
+            return self.b + (self.alpha*self.polary) @ test.T
+        else:
+            if len(test.shape) == 1:
+                return self.b + sum(self.alpha * self.polary * np.array([self.kernel(test, x) for x in self.data]))
+            else:
+                return np.array([self.f(xt) for xt in test])
+
+    def predict(self, test: np.ndarray):
+        return np.where(self.f(test)>0, 1, 0)
+
+    def accuracy(self, test: np.ndarray, testlabel: np.ndarray):
+        return accuracy_score(self.predict(test), testlabel)
+
+    def score(self, test: np.ndarray, testlabel: np.ndarray):
+        return self.accuracy(test, testlabel)
+
+    # noinspection PyAttributeOutsideInit
+    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
+        logger.debug(repr(self))
+        # super().__init__(X, y)
+        self.num_data = len(y)
+        self.data = X
+        self.label = y
+        self.polary = 2 * y - 1
+        self._fit_cvxopt()
+        self._fit_postprocessing()
+        logger.debug(self.result)
+
+    def _fit_cvxopt(self):
+        logger.info('CVXOPT fitting starting')
+        K, Y = _Matrix_Helper.__find_kernel_matrix__(self.data, self.polary, self.kernel)
+        if self.C is None:
+            P = (K + 1 / self.lamda) * Y
+        else:
+            P = (K + 1 / self.lamda) * Y + (1/self.C)*np.eye(self.num_data)
+        P = cvxopt.matrix(P, (self.num_data, self.num_data), 'd')
+        self.P = P
+        P, q, G, h, A, b = _Matrix_Helper.__find_matrix__SoftQASVM__(P, self.num_data, self.C)
+
+        cvxopt.solvers.options['show_progress'] = False
+        sol = cvxopt.solvers.qp(2*P, q, G, h, A, b)
+
+        self.status = sol['status']
+        self.iterations = sol['iterations']
+        self.alpha = np.array(sol['x']).flatten()
+        self.result = sol
+
+    def _fit_postprocessing(self):
+        self.b = np.sum(self.alpha * self.polary) / self.lamda
+        self.support_, self.support_vectors_, self.n_support_ = process_info_from_alpha(self.alpha, self.data)
+
+    @property
+    def dual_objective_value(self):
+        Alpha = self.alpha.reshape(-1, 1)
+        return float(Alpha.T @ np.array(self.P) @ Alpha)

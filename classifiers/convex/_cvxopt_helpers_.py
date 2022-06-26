@@ -6,15 +6,18 @@ class _Matrix_Helper:
     @staticmethod
     def __find_kernel_matrix__(data, polary, kernel):
         # K = pairwise_kernels(data, data, metric=kernel)
-        K = np.empty((len(data), len(data)))
-        for i in range(len(data)):
-            for j in range(len(data)):
-                K[i, j] = kernel(data[i], data[j])
+        if kernel == 'precomputed':
+            K = data
+        else:
+            K = np.empty((len(data), len(data)))
+            for i in range(len(data)):
+                for j in range(len(data)):
+                    K[i, j] = kernel(data[i], data[j])
+                    """
+            if centering:
+                kl = KernelCenterer()
+                K = kl.fit_transform(K)
                 """
-        if centering:
-            kl = KernelCenterer()
-            K = kl.fit_transform(K)
-            """
         Y = polary.reshape(-1, 1) @ polary.reshape(1, -1)
         return K, Y
 
@@ -45,6 +48,15 @@ class _Matrix_Helper:
         else:
             b = cvxopt.matrix(C, (1, 1), 'd')
             q = cvxopt.matrix(-1.0, (n, 1), 'd')
+        return P, q, G, h, A, b
+
+    @staticmethod
+    def __find_matrix__SoftQASVM__(P, n, C):
+        A = cvxopt.matrix(1.0, (1, n), 'd')
+        h = cvxopt.matrix(0.0, (n, 1), 'd')
+        G = cvxopt.matrix(-np.eye(n), (n, n), 'd')
+        b = cvxopt.matrix(1.0, (1, 1), 'd')
+        q = cvxopt.matrix(0.0, (n, 1), 'd')
         return P, q, G, h, A, b
 
     # noinspection DuplicatedCode
