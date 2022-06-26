@@ -126,3 +126,32 @@ class CostParamStorage(CallBack):
         else:
             df = self.data[self.data['Accepted'] == True]
             return len(df)
+
+    def termination_checker(self, minimum:float=None, last_avg:int=1, tol:float=0.1):
+        """
+            minimum: if float, terminate when obj. val. is less then minimum*(1+tol)
+                     if None, terminate when obj. val. converges.
+            last_avg: number of samples to average loss function
+            tol: tol>=0
+        """
+        if minimum is None:
+            def terminate(*args):
+                if self.num_accepted() > 2 * last_avg and self.last_cost_avg(2 * last_avg, ignore_rejected=True) < self.last_cost_avg(last_avg, ignore_rejected=True):
+                    return True
+                else:
+                    return False
+        else:
+            def terminate(*args):
+                if self.num_accepted() > 2 * last_avg and self.last_cost_avg(last_avg, ignore_rejected=True) >= minimum*(1+tol):
+                    return True
+                else:
+                    return False
+        return terminate
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+if __name__=="__main__":
+    storage = CostParamStorage()
+    storage(0, [0, 0], 0, 0, True)
+    print(len(storage))
