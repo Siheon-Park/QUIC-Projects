@@ -1,8 +1,12 @@
-# QUIC-Projects
+# Variational Quantum Approximate Support Vector Machine (VQASVM)
+
+Related Preprints:
+
+1. Variational Quantum Approximate Support Vector Machine With Inference Transfer <https://arxiv.org/abs/2206.14507>
 
 ## Version Information
 
-#### Qiskit Software Version
+### Qiskit Software Version
 
 - Qiskit 0.25.4
 - Terra 0.17.2
@@ -11,7 +15,7 @@
 - Aqua 0.9.1
 - IBM Q Provider 0.12.3
 
-#### System information
+### System information
 
 - Python 3.9.2 (default, Mar 3 2021, 20:02:32) [GCC 7.3.0]
 - OS Linux
@@ -81,6 +85,18 @@ layout = Qasvm_Mapping_4x2(backend, a=3, i0=9, i1=11, xi=5, yi=8, j0=0, j1=4, xj
 layout = Qasvm_Mapping_4x2(backend, a=13, i0=10, i1=7, xi=12, yi=6, j0=11, j1=8, xj=14, yj=9)
 ```
 
-## Results
+## IBM Quantum Processor Results
 
 If dataset is unbalanced, QASVM performs better than uniform weight STC.
+Below figures summarize classification result
+
+1. When training dataset is balanced
+![balanced_result](summary_ipynb/benchmarking/figs/montreal/balanced_result.png)
+1. When training dataset is unbalanced
+![balanced_result](summary_ipynb/benchmarking/figs/montreal/unbalanced_result.png)
+
+## Numerical Analysis on Iris Dataset
+
+Number of optimization parameter can be lower than training dataset size $M$. Refer to our paper <https://arxiv.org/abs/2206.14507>
+
+![numanal](summary_ipynb/benchmarking/figs/numerical_analysis_iris_error.png)
