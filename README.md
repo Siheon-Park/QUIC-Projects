@@ -88,7 +88,7 @@ layout = Qasvm_Mapping_4x2(backend, a=13, i0=10, i1=7, xi=12, yi=6, j0=11, j1=8,
 ## IBM Quantum Processor Results
 
 If dataset is unbalanced, QASVM performs better than uniform weight STC.
-Below figures summarize classification result
+Below figures summarize classification result on quantum processor `ibmq_montreal`
 
 1. When training dataset is balanced
 ![balanced_result](summary_ipynb/benchmarking/figs/montreal/balanced_result.png)
