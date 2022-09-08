@@ -9,7 +9,6 @@ __pycache__
 # saved data
 *.dill
 *.pkl
-.gitignore
 
 # spyder projects
 .spyproject
@@ -28,3 +27,4 @@ sample_notebook.ipynb
 /summary_ipynb/2021/10 October/15 Fri/Exp6(pseudo_iris_hard).zip
 
 *.csv#
+**/events.out.tfevents.*
