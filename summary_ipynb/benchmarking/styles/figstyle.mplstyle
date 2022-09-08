@@ -3,7 +3,8 @@
 # and all font sizes in a figure to be 7 pt and panel labels to be 8 pt bold.
 
 # Seaborn colorblind palette
-axes.prop_cycle: cycler('color', ['648FFF', '785EF0', 'DC267F', 'FE6100', 'FFB000'])
+# axes.prop_cycle: cycler('color', ['648FFF', '785EF0', 'DC267F', 'FE6100', 'FFB000'])
+axes.prop_cycle: cycler('color', ['D81B60', '1E88E5', 'FFC107', '004D40', 'E3735C'])
 patch.facecolor: 648FFF
 
 # Figure size
