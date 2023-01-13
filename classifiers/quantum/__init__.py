@@ -6,7 +6,7 @@ from qiskit.compiler import transpile
 from qiskit.circuit import QuantumRegister, QuantumCircuit
 from qiskit.circuit import Qubit
 from qiskit.transpiler import Layout
-from qiskit.providers.basebackend import BaseBackend
+# from qiskit.providers.basebackend import BaseBackend
 from qiskit.visualization import plot_circuit_layout
 from itertools import product
 from typing import Union, Dict
@@ -21,7 +21,7 @@ class QuantumClassifier(Classifier, metaclass=ABCMeta):
 class Qasvm_Mapping_4x2(Layout):
     """ Layout subclass to fed into QuantumInstance.initial_layout"""
 
-    def __init__(self, backend: Union[str, BaseBackend, dict] = None, **qubits: dict):
+    def __init__(self, backend = None, **qubits: dict):
         self.json_layout = qubits
         if backend is None or isinstance(backend, dict):
             super().__init__(backend)

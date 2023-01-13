@@ -53,7 +53,7 @@ class SklearnDataset(object):
             y = _tmp[_tmp.columns[-1]].to_numpy()
             return X, y
 
-    def sample_training_and_test_dataset(self, size: tuple[int, int], *args, return_X_y: bool = False, **kwargs):
+    def sample_training_and_test_dataset(self, size: tuple, *args, return_X_y: bool = False, **kwargs):
         _tmp = self.frame.sample(size[0]+size[1], *args, **kwargs)
         training, test = _tmp.iloc[:size[0]], _tmp.iloc[size[0]:]
         if return_X_y:
