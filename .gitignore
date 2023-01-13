@@ -28,3 +28,4 @@ sample_notebook.ipynb
 
 *.csv#
 **/events.out.tfevents.*
+*.npy
