@@ -16,7 +16,7 @@ from sklearn.metrics import accuracy_score
 
 logger = logging.getLogger(__name__)
 
-STATEVECTOR_INSTANCE = QuantumInstance(backend = StatevectorSimulator())
+STATEVECTOR_INSTANCE = QuantumInstance(backend = StatevectorSimulator(device='CPU'))
 
 class PseudoTensorSoftQASVM(QuantumClassifier):
     def __init__(
@@ -52,6 +52,26 @@ class PseudoTensorSoftQASVM(QuantumClassifier):
             K = self.kernel_matrix + (1 / self.lamda)
         ret = qml.numpy.matmul(beta, qml.numpy.matmul(K, beta))
         return ret
+
+    def grad_fn_00(self, params: qml.numpy.tensor):
+        shift = qml.numpy.zeros_like(params)
+        shift[0, 0] = np.pi/2
+        @qml.qnode(device=self.device)
+        def get_alpha(params):
+            self.var_form(params)
+            return qml.probs(self.device.wires)
+        alpha = get_alpha(params)
+        alpha_p = get_alpha(params+shift)
+        alpha_m = get_alpha(params-shift)
+        beta = alpha * self.polary
+        beta_p = alpha_p * self.polary
+        beta_m = alpha_m * self.polary
+        if self.C is not None:
+            K = self.kernel_matrix + (1 / self.lamda) + (qml.numpy.eye(self.num_data)/self.C)
+        else:
+            K = self.kernel_matrix + (1 / self.lamda)
+        ret = qml.numpy.matmul(beta, qml.numpy.matmul(K, beta_p)) - qml.numpy.matmul(beta, qml.numpy.matmul(K, beta_m))
+        return ret
         
     def f(self, testdata: np.ndarray, params: np.ndarray):
         @qml.qnode(device=self.device)
@@ -66,6 +86,20 @@ class PseudoTensorSoftQASVM(QuantumClassifier):
             K = self._qk.evaluate(self.data, testdata)
         K += 1 / self.lamda
         return np.matmul(beta, K)
+
+    def avg_f(self, params: qml.numpy.tensor):
+        @qml.qnode(device=self.device)
+        def get_alpha(params):
+            self.var_form(params)
+            return qml.probs(self.device.wires)
+        alpha = get_alpha(params)
+        beta = alpha * self.polary
+        if self.C is not None:
+            K = self.kernel_matrix + (1 / self.lamda) + (qml.numpy.eye(self.num_data)/self.C)
+        else:
+            K = self.kernel_matrix + (1 / self.lamda)
+        ret = qml.numpy.matmul(self.polary/len(self.polary), qml.numpy.matmul(K, beta))
+        return ret
 
     def predict(self, testdata:np.ndarray, params:np.ndarray):
         fvec = self.f(testdata=testdata, params=params)

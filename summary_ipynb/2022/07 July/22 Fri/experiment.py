@@ -139,7 +139,7 @@ def main():
             ), fp=fp, default=list)
 
         # ansatz setup
-        device:qml.Device = qml.device('lightning.qubit', wires=n_qubits)
+        device:qml.Device = qml.device('lightning.gpu', wires=n_qubits)
         def var_form(params):
             qml.BasicEntanglerLayers(params, wires=device.wires, rotation=qml.RY)
         for n_layers in n_layers_list:
