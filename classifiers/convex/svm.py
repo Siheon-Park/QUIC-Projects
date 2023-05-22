@@ -7,6 +7,7 @@ from ._cvxopt_helpers_ import _Matrix_Helper
 from . import ConvexClassifier, ConvexError
 from .. import process_info_from_alpha
 from ..kernel import Kernel
+from typing import List, Tuple, Union, Dict, Any
 
 _EPS = 1e-5
 
@@ -151,7 +152,14 @@ class BinarySVM(ConvexClassifier):
             return None
 
 class CvxSoftQASVM(ConvexClassifier):
-    def __init__(self, kernel: Kernel, C: float = None, lamda: float = None, **kwargs) -> None:
+    def __init__(self, kernel: Union[Kernel, str], C: float = None, lamda: float = 1, **kwargs) -> None:
+        """ Soft QASVM with cvxopt
+
+        Args:
+            kernel (Union[Kernel, str]): kernel function. if it is 'precomputed', the kernel matrix should be given as data in fit method.
+            C (float, optional): Hyperparmeter. Defaults to None = inf.
+            lamda (float, optional): Hyperparmeter. Defaults to 1.
+        """
         self.kernel = kernel
         self.C = C
         self.lamda = lamda
@@ -162,6 +170,14 @@ class CvxSoftQASVM(ConvexClassifier):
         self.result = None
 
     def f(self, test: np.ndarray):
+        """ Decision function
+
+        Args:
+            test (np.ndarray): test data. If kernel is 'precomputed', test should be kernel matrix of test data and training data.
+
+        Returns:
+            fval: Decision function value len(fval) == number of test data
+        """
         if self.kernel == 'precomputed':
             return self.b + (self.alpha*self.polary) @ test.T
         else:
@@ -171,16 +187,32 @@ class CvxSoftQASVM(ConvexClassifier):
                 return np.array([self.f(xt) for xt in test])
 
     def predict(self, test: np.ndarray):
+        """ estimate label of test data
+
+        Args:
+            test (np.ndarray): test data. If kernel is 'precomputed', test should be kernel matrix of test data and training data.
+
+        Returns:
+            estimated_label: estimated label of test data
+        """
         return np.where(self.f(test)>0, 1, 0)
 
     def accuracy(self, test: np.ndarray, testlabel: np.ndarray):
+        """ accuracy score """
         return accuracy_score(self.predict(test), testlabel)
 
     def score(self, test: np.ndarray, testlabel: np.ndarray):
+        """ accuracy score """
         return self.accuracy(test, testlabel)
 
     # noinspection PyAttributeOutsideInit
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
+        """ fit the model
+
+        Args:
+            X (np.ndarray): Training data. If kernel is 'precomputed', X should be the kernel matrix.
+            y (np.ndarray): binary label (0 or 1)
+        """
         logger.debug(repr(self))
         # super().__init__(X, y)
         self.num_data = len(y)
@@ -218,3 +250,12 @@ class CvxSoftQASVM(ConvexClassifier):
     def dual_objective_value(self):
         Alpha = self.alpha.reshape(-1, 1)
         return float(Alpha.T @ np.array(self.P) @ Alpha)
+    
+    @property
+    def objective_value(self):
+        """Optimized objective value
+
+        Returns:
+            float: Optimized objective value
+        """
+        return self.dual_objective_value

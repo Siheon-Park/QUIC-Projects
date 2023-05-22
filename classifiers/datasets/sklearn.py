@@ -13,6 +13,10 @@ class SklearnDataset(object):
                 loader=datasets.load_iris
             elif loader=='wine':
                 loader=datasets.load_wine
+            elif loader=='breast_cancer':
+                loader=datasets.load_breast_cancer
+            elif loader=='digits':
+                loader=datasets.load_digits
         [self.__setattr__(name, value) for name, value in loader().items()]
         self.num_features = len(self.feature_names)
         self.num_total = len(self.target)
@@ -30,7 +34,7 @@ class SklearnDataset(object):
                 try:
                     true_hot = list(self.target_names).index(true_hot)
                 except ValueError as e:
-                    raise ValueError(str(e)[:-4] + 'target_names')
+                    raise ValueError(str(e)[:-self.num_features] + 'target_names')
             elif isinstance(true_hot, int):
                 pass
             else:
