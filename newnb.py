@@ -1,4 +1,4 @@
-#!/home/quic/anaconda3/envs/QUIC/bin/python
+#!/home/quic/anaconda/envs/qiskit/bin/python
 
 import sys
 import time
